@@ -632,10 +632,31 @@ def admin_view():
         df['payment_status'] = 'Unpaid'
 
     def make_wa_link(row):
-        msg = urllib.parse.quote(f"Hi {row['name']}, your Order #{row['id']} is {row['status']}! Payment: {row['payment_status']}.")
+        # Determine message based on Pay Status
+        payment_msg = ""
+        if row['payment_status'] == 'Unpaid':
+            payment_msg = f"Please proceed with payment of ₹{row['amount']:.2f}."
+        elif row['payment_status'] == 'Paid':
+             payment_msg = "Payment Received. Thank you!"
+        
+        msg = urllib.parse.quote(f"Hi {row['name']}, your Order #{row['id']} is {row['status']}! {payment_msg}")
+        
         p = str(row['phone']).strip()
-        if not p.startswith("+"): p = "+91" + p 
-        return f"https://wa.me/{p}?text={msg}"
+        # Clean phone number (remove non-digits except +)
+        import re
+        p_clean = re.sub(r'[^\d+]', '', p)
+        
+        if not p_clean.startswith("+"): 
+            # If no country code, add +91
+            if len(p_clean) == 10:
+                p_clean = "+91" + p_clean
+            elif p_clean.startswith("91") and len(p_clean) == 12:
+                p_clean = "+" + p_clean
+            else:
+                 # Fallback if unsure, just prefix +91 if length is reasonable, else default to whatever user gave
+                 p_clean = "+91" + p_clean
+                 
+        return f"https://wa.me/{p_clean}?text={msg}"
 
     if not df.empty:
         df['notify_link'] = df.apply(make_wa_link, axis=1)
