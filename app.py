@@ -1138,21 +1138,21 @@ def track_orders_view():
                 
                 for index, row in orders.iterrows():
                     # Status color mapping
-                    status_colors = {
-                        'Pending': ('#f59e0b', '#fffbeb', 'Pending'),
-                        'Waiting for Payment': ('#3b82f6', '#eff6ff', 'Awaiting Payment'),
-                        'Printing': ('#8b5cf6', '#f5f3ff', 'In Progress'),
-                        'Ready for Pickup': ('#10b981', '#ecfdf5', 'Ready'),
-                        'Completed': ('#6b7280', '#f9fafb', 'Completed')
-                    }
-                    
                     status = row['status']
-                    color, bg, label = status_colors.get(status, ('#6b7280', '#f9fafb', status))
+                    # Using darker text colors for light backgrounds for better readability
+                    status_colors = {
+                        'Pending': ('#92400e', '#fef3c7', 'Pending'), # Dark Orange text on Light Orange bg
+                        'Waiting for Payment': ('#1e40af', '#dbeafe', 'Awaiting Payment'), # Dark Blue on Light Blue
+                        'Printing': ('#6d28d9', '#ede9fe', 'In Progress'), # Dark Purple on Light Purple
+                        'Ready for Pickup': ('#065f46', '#d1fae5', 'Ready'), # Dark Green on Light Green
+                        'Completed': ('#374151', '#f3f4f6', 'Completed') # Dark Gray on Light Gray
+                    }
+                    color, bg, label = status_colors.get(status, ('#374151', '#f3f4f6', status))
                     
                     # Payment status colors
                     pay_status = row.get('payment_status', 'Unpaid')
-                    pay_color = '#10b981' if pay_status == 'Paid' else '#ef4444'
-                    pay_bg = '#ecfdf5' if pay_status == 'Paid' else '#fef2f2'
+                    pay_color = '#065f46' if pay_status == 'Paid' else '#991b1b' # Dark Green or Dark Red
+                    pay_bg = '#d1fae5' if pay_status == 'Paid' else '#fee2e2' # Light Green or Light Red
                     
                     with st.container(border=True):
                         # Order header
