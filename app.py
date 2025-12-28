@@ -591,10 +591,6 @@ def order_view():
                             mime="application/pdf",
                             use_container_width=True
                         )
-                    
-                    with st.expander("View Payment QR Code"):
-                         st.image("assets/qr_code.png", width=250, caption="Scan to Pay (Wait for confirmation first)")
-                         st.info(f"Amount to Pay: ₹{estimated_total:.2f}")
 
                 else:
                     if "SMTP" in msg or "missing" in msg: 
@@ -632,10 +628,12 @@ def admin_view():
         df['payment_status'] = 'Unpaid'
 
     def make_wa_link(row):
-        # Determine message based on Pay Status
-        payment_msg = ""
-        if row['payment_status'] == 'Unpaid':
-            payment_msg = f"Please proceed with payment of ₹{row['amount']:.2f}."
+
+        # Contextual Payment Message
+        if row['status'] == 'Waiting for Payment' and row['payment_status'] == 'Unpaid':
+             payment_msg = f"Please proceed to pay ₹{row['amount']:.2f}. Go to 'Track Orders' on our site to view the QR Code."
+        elif row['payment_status'] == 'Unpaid':
+            payment_msg = f"Amt: ₹{row['amount']:.2f}. Payment Pending."
         elif row['payment_status'] == 'Paid':
              payment_msg = "Payment Received. Thank you!"
         
@@ -671,7 +669,7 @@ def admin_view():
                 ),
                 "status": st.column_config.SelectboxColumn(
                     "Status",
-                    options=["Pending", "Printing", "Ready for Pickup", "Completed"],
+                    options=["Pending", "Waiting for Payment", "Printing", "Ready for Pickup", "Completed"],
                     required=True
                 ),
                 "payment_status": st.column_config.SelectboxColumn(
@@ -725,6 +723,14 @@ def track_orders_view():
                         with c3:
                             status_color = "orange" if row['status'] == 'Pending' else "green" if row['status'] == 'Completed' else "blue"
                             st.markdown(f"Status: <span style='color:{status_color}; font-weight:bold'>{row['status']}</span>", unsafe_allow_html=True)
+                            
+                            # Show Payment QR if Waiting for Payment
+                            if row['status'] == "Waiting for Payment" and row.get('payment_status', 'Unpaid') == 'Unpaid':
+                                with st.expander("💸 Pay Now (QR Code)", expanded=True):
+                                    st.image("assets/qr_code.png", width=200)
+                                    st.write(f"**Amount: ₹{row['amount']:.2f}**")
+                                    st.info("After paying, please wait for 'Paid' status update.")
+
                         with c4:
                             pay_color = "green" if row.get('payment_status', 'Unpaid') == 'Paid' else "red"
                             st.markdown(f"Pay: <span style='color:{pay_color}; font-weight:bold'>{row.get('payment_status', 'Unpaid')}</span>", unsafe_allow_html=True)
