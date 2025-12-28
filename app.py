@@ -640,9 +640,10 @@ def admin_view():
     with st.sidebar:
         st.header("Login")
         pwd = st.text_input("Password", type="password")
-        # Secure Password Check
-        correct_password = st.secrets.get("admin_password", "Anonymous_77")
-        if pwd == correct_password: 
+        # Secure Password Check (Must be set in secrets.toml)
+        correct_password = st.secrets.get("admin_password")
+        
+        if correct_password and pwd == correct_password: 
             st.session_state['admin_logged_in'] = True
         elif pwd:
             st.error("Invalid Password")
