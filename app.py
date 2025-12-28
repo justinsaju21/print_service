@@ -476,21 +476,7 @@ def home_view():
     st.write("")
     if st.button("Start Your Order ->", type="primary", use_container_width=True):
         navigate_to('order')
-            calc_paper = st.selectbox("Paper Selection", ["Standard", "Glossy"])
-            
-            p_type_logic = "Glossy" if calc_paper == "Glossy" else "Standard"
-            est_cost = calculate_price(calc_pages, calc_color, p_type_logic)
-            
-            st.markdown(f"### Estimated: ₹{est_cost:.2f}")
 
-    st.divider()
-    
-    # Centered CTA
-    _, center_col, _ = st.columns([1, 2, 1])
-    with center_col:
-        st.info("Ready to print? Upload your files below.")
-        if st.button("UPLOAD DOCUMENTS & ORDER NOW", use_container_width=True):
-            navigate_to('order')
 
 
 def order_view():
