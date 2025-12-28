@@ -5,7 +5,54 @@ from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
 from email import encoders
 import os
+import pandas as pd
 import PyPDF2
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
+import io
+import urllib.parse
+import sqlite3
+import datetime
+
+# --- DATABASE SETUP ---
+def init_db():
+    conn = sqlite3.connect('orders.db')
+    c = conn.cursor()
+    c.execute('''CREATE TABLE IF NOT EXISTS orders
+                 (id INTEGER PRIMARY KEY AUTOINCREMENT, 
+                  date TEXT, 
+                  name TEXT, 
+                  phone TEXT, 
+                  email TEXT, 
+                  status TEXT, 
+                  amount REAL,
+                  details TEXT)''')
+    conn.commit()
+    conn.close()
+
+def save_order(name, phone, email, amount, details):
+    conn = sqlite3.connect('orders.db')
+    c = conn.cursor()
+    date_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    c.execute("INSERT INTO orders (date, name, phone, email, status, amount, details) VALUES (?, ?, ?, ?, ?, ?, ?)",
+              (date_str, name, phone, email, 'Pending', amount, str(details)))
+    order_id = c.lastrowid
+    conn.commit()
+    conn.close()
+    return order_id
+
+def get_all_orders():
+    conn = sqlite3.connect('orders.db')
+    df = pd.read_sql_query("SELECT * FROM orders ORDER BY id DESC", conn)
+    conn.close()
+    return df
+
+def update_status(order_id, new_status):
+    conn = sqlite3.connect('orders.db')
+    c = conn.cursor()
+    c.execute("UPDATE orders SET status = ? WHERE id = ?", (new_status, order_id))
+    conn.commit()
+    conn.close()
 
 # --- CONFIGURATION & STYLING ---
 st.set_page_config(
@@ -107,6 +154,9 @@ def calculate_price(pages, color_mode, paper_type):
     
     return pages * rate
 
+    return pages * rate
+
+@st.cache_data
 def count_pages(uploaded_files):
     total_pages = 0
     file_details = []
@@ -126,6 +176,60 @@ def count_pages(uploaded_files):
             file_details.append(f"{uploaded_file.name}: Error counting")
             
     return total_pages, file_details
+
+def auto_rename_file(uploaded_file, order_id, customer_name):
+    # Format: Name_Date_OrderID.ext
+    # Sanitize name
+    safe_name = "".join(x for x in customer_name if x.isalnum())
+    date_str = datetime.datetime.now().strftime("%d%b") # e.g. 28Dec
+    ext = os.path.splitext(uploaded_file.name)[1]
+    
+    new_name = f"{safe_name}_{date_str}_Order{order_id}{ext}"
+    uploaded_file.name = new_name # Streamlit allows modifying this attribute
+    return uploaded_file
+
+def generate_receipt(customer_name, order_details, total_cost, file_breakdown):
+    buffer = io.BytesIO()
+    c = canvas.Canvas(buffer, pagesize=letter)
+    width, height = letter
+    
+    # Header
+    c.setFont("Helvetica-Bold", 20)
+    c.drawString(50, height - 50, "Print Service Receipt")
+    
+    c.setFont("Helvetica", 12)
+    c.drawString(50, height - 80, f"Customer: {customer_name}")
+    c.drawString(50, height - 100, f"Date: {pd.Timestamp.now().strftime('%Y-%m-%d %H:%M')}")
+    
+    # Order Details
+    c.drawString(50, height - 140, "Order Details:")
+    c.line(50, height - 145, 250, height - 145)
+    
+    y = height - 165
+    c.drawString(60, y, f"Pages: {order_details['pages']}")
+    y -= 20
+    c.drawString(60, y, f"Color: {order_details['color']}")
+    y -= 20
+    c.drawString(60, y, f"Paper: {order_details['paper']}")
+    y -= 20
+    c.drawString(60, y, f"Sides: {order_details['sides']}")
+    
+    # Files
+    y -= 40
+    c.drawString(50, y, "Files:")
+    for f in file_breakdown:
+        y -= 20
+        c.drawString(60, y, f"- {f}")
+        
+    # Total
+    y -= 50
+    c.setFont("Helvetica-Bold", 16)
+    c.drawString(50, y, f"Total Amount: INR {total_cost:.2f}")
+    
+    c.showPage()
+    c.save()
+    buffer.seek(0)
+    return buffer
 
 def send_email(customer_name, customer_email, customer_phone, order_details, uploaded_files, comments, total_cost, file_breakdown):
     try:
@@ -321,6 +425,9 @@ def order_view():
     st.write("") # Spacer
 
     # --- 5. Submit Action ---
+    st.write("")
+    agree_terms = st.checkbox("I agree to the Terms of Service and confirm I have the rights to print this document")
+    
     submit_order = st.button("Confirm & Send Order", type="primary", use_container_width=True)
     
     if submit_order:
@@ -328,34 +435,66 @@ def order_view():
         if not name: missing.append("Name")
         if not phone: missing.append("Phone")
         if not uploaded_files: missing.append("Files")
+        if not agree_terms: missing.append("Terms of Service Agreement")
         
         if missing:
             st.error(f"Please provide: {', '.join(missing)}")
         else:
             with st.spinner("Processing Order..."):
+                # 0. Init DB (Safe to call repeatedly)
+                init_db()
+                
+                # 1. Save to Database to get Order ID
                 order_data = {
                     "color": color_mode,
                     "paper": paper_type,
                     "sides": sides,
                     "pages": detected_pages
                 }
+                order_id = save_order(name, phone, email, estimated_total, order_data)
                 
-                success, msg = send_email(name, email, phone, order_data, uploaded_files, comments, estimated_total, file_info)
+                # 2. Rename Files
+                renamed_files = []
+                for f in uploaded_files:
+                    renamed_files.append(auto_rename_file(f, order_id, name))
+                
+                # 3. Send Email (with renamed files)
+                success, msg = send_email(name, email, phone, order_data, renamed_files, comments, estimated_total, file_info)
                 
                 if success:
-                    st.success("Order Sent Successfully!")
+                    st.success(f"Order #{order_id} Sent Successfully!")
                     st.balloons()
                     
-                    st.markdown("""
+                    # 1. Generate Receipt
+                    pdf_buffer = generate_receipt(name, order_data, estimated_total, file_info)
+                    
+                    # 2. WhatsApp Link (Now using Real Order ID)
+                    wa_message = urllib.parse.quote(f"Hi, I just placed Order #{order_id}. Name: {name}. Please confirm.")
+                    wa_link = f"https://wa.me/91XXXXXXXXXX?text={wa_message}" 
+                    
+                    st.markdown(f"""
                     <div style="background-color: #e3f2fd; padding: 20px; border-radius: 10px; text-align: center; border-left: 5px solid #2196f3;">
-                        <h3 style="color: #0d47a1; margin-top: 0;">Order Received! ✅</h3>
+                        <h3 style="color: #0d47a1; margin-top: 0;">Order #{order_id} Received! ✅</h3>
                         <p style="font-size: 1.1em;">We have received your order details.</p>
                         <p style="font-size: 1.1em; font-weight: bold; color: #d32f2f;">
                             ⚠️ PLEASE WAIT for a confirmation message on WhatsApp before making the payment.
                         </p>
-                        <p>Once confirmed, you can scan the QR code below.</p>
                     </div>
                     """, unsafe_allow_html=True)
+                    
+                    # Action Buttons
+                    st.write("")
+                    col_wa, col_dl = st.columns(2)
+                    with col_wa:
+                        st.link_button("💬 Track Status on WhatsApp", wa_link, type="primary", use_container_width=True)
+                    with col_dl:
+                        st.download_button(
+                            label="📄 Download Receipt",
+                            data=pdf_buffer,
+                            file_name=f"receipt_{name.replace(' ', '_')}.pdf",
+                            mime="application/pdf",
+                            use_container_width=True
+                        )
                     
                     with st.expander("View Payment QR Code"):
                          st.image("assets/qr_code.png", width=250, caption="Scan to Pay (Wait for confirmation first)")
@@ -369,13 +508,105 @@ def order_view():
                     else:
                         st.error(f"Failed to send: {msg}")
 
+def admin_view():
+    st.title("Admin Dashboard 🔒")
+    
+    # Simple Sidebar Login
+    with st.sidebar:
+        st.header("Login")
+        pwd = st.text_input("Password", type="password")
+        if pwd == "admin123": # Hardcoded for simplicity as requested
+            st.session_state['admin_logged_in'] = True
+        elif pwd:
+            st.error("Invalid Password")
+            
+    if not st.session_state.get('admin_logged_in'):
+        st.warning("Please log in from the sidebar to access the admin panel.")
+        return
+
+    st.success("Logged in as Admin")
+    
+    # --- Data Editor ---
+    st.subheader("Order Management")
+    
+    df = get_all_orders()
+    
+    # Create WhatsApp Link Column
+    # Link format: https://wa.me/{phone}?text=...
+    # We construct it dynamically
+    
+    # We can't generate the dynamic link easily inside data_editor for every row unless we pre-calculate it
+    # Let's add a 'Notify Link' column to the DF for display
+    
+    def make_wa_link(row):
+        msg = urllib.parse.quote(f"Hi {row['name']}, your Order #{row['id']} is {row['status']}!")
+        # Ensure phone has country code. Assuming Indian +91 for now if missing, or use as is
+        p = str(row['phone']).strip()
+        if not p.startswith("+"): p = "+91" + p # Defaulting to IN
+        return f"https://wa.me/{p}?text={msg}"
+
+    if not df.empty:
+        df['notify_link'] = df.apply(make_wa_link, axis=1)
+
+        edited_df = st.data_editor(
+            df,
+            column_config={
+                "notify_link": st.column_config.LinkColumn(
+                    "Notify Customer",
+                    help="Click to open WhatsApp with pre-filled status message",
+                    display_text="Open WhatsApp 💬"
+                ),
+                "status": st.column_config.SelectboxColumn(
+                    "Status",
+                    options=["Pending", "Printing", "Ready for Pickup", "Completed"],
+                    required=True
+                )
+            },
+            disabled=["id", "date", "name", "phone", "email", "amount", "details", "notify_link"],
+            hide_index=True,
+            key="order_editor"
+        )
+        
+        # Detect Changes
+        # st.data_editor currently relies on user interaction. 
+        # To save changes back to DB, we compare edited_df with stored DF or rely on state
+        
+        # Simpler approach: Iterate over edited_df and update DB for Changed Statuses
+        # But data_editor returns the current state. We can just update "onChange"?
+        # Actually, Streamlit data_editor returns a NEW dataframe. 
+        # We should iterate and update DB where status differs? 
+        # Or simpler: Just Provide a "Save Changes" button?
+        
+        if st.button("Save Status Changes"):
+            # Iterate and update
+            # Note: In a real app with pagination this is inefficient, but fine for SQLite here
+            for index, row in edited_df.iterrows():
+                # We update all, filtering by ID
+                # Optimization: Only update if changed? 
+                # For now, simplistic update is robust enough
+                update_status(row['id'], row['status'])
+            st.success("Database Updated!")
+            st.rerun() # Refresh to show saved state
+            
+    else:
+        st.info("No orders found in database.")
+
+
 # --- MAIN CONTROLLER ---
 
 def main():
+    # Sidebar Navigation for Admin
+    with st.sidebar:
+        st.title("Navigation")
+        if st.button("🏠 Home"): navigate_to('home')
+        if st.button("🔒 Admin Panel"): navigate_to('admin')
+
     if st.session_state['page'] == 'home':
         home_view()
-    else:
+    elif st.session_state['page'] == 'order':
         order_view()
+    elif st.session_state['page'] == 'admin':
+        admin_view()
 
 if __name__ == "__main__":
     main()
