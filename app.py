@@ -183,56 +183,301 @@ PRICE_GLOSSY_ADDON = 20.0 # Assuming this is flat rate or per page substitute? T
 
 st.markdown("""
     <style>
-    /* Global Settings */
+    /* ===== IMPORTS ===== */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@600;700;800&display=swap');
+    
+    /* ===== GLOBAL DESIGN TOKENS ===== */
+    :root {
+        --color-primary: #4f46e5;
+        --color-primary-dark: #4338ca;
+        --color-primary-light: #6366f1;
+        --color-secondary: #06b6d4;
+        --color-success: #10b981;
+        --color-warning: #f59e0b;
+        --color-error: #ef4444;
+        --color-bg-main: #f8fafc;
+        --color-bg-card: #ffffff;
+        --color-text-primary: #1e293b;
+        --color-text-secondary: #64748b;
+        --color-border: #e2e8f0;
+        --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+        --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        --radius-sm: 0.375rem;
+        --radius-md: 0.5rem;
+        --radius-lg: 0.75rem;
+        --radius-xl: 1rem;
+        --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+        --transition-base: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+        --transition-slow: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    /* ===== GLOBAL RESETS ===== */
     .main {
-        background-color: #f8f9fa;
+        background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     }
-    h1 {
-        color: #1a237e;
-        font-family: 'Roboto', 'Helvetica Neue', sans-serif;
-        text-align: center;
+    
+    /* ===== TYPOGRAPHY ===== */
+    h1, h2, h3, h4, h5, h6 {
+        font-family: 'Poppins', 'Inter', sans-serif;
         font-weight: 700;
-        margin-bottom: 30px;
-    }
-    h2, h3 {
-        color: #283593;
-        font-family: 'Roboto', sans-serif;
+        color: var(--color-text-primary);
+        letter-spacing: -0.025em;
     }
     
-    /* Price Card Styling Removed (Using Native Containers) */
+    h1 {
+        font-size: 2.5rem;
+        background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin-bottom: 1rem;
+    }
     
-    /* Button Styling */
-    .stButton>button {
-        background: linear-gradient(45deg, #1565c0, #42a5f5);
+    h2 {
+        font-size: 1.875rem;
+        color: var(--color-primary-dark);
+        margin-bottom: 0.75rem;
+    }
+    
+    h3 {
+        font-size: 1.5rem;
+        color: var(--color-primary);
+        margin-bottom: 0.5rem;
+    }
+    
+    p, .stMarkdown {
+        color: var(--color-text-secondary);
+        line-height: 1.6;
+    }
+    
+    /* ===== BUTTONS ===== */
+    .stButton > button {
+        background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
         color: white;
         border: none;
-        border-radius: 25px;
-        height: 55px;
+        border-radius: var(--radius-lg);
+        padding: 0.75rem 2rem;
         font-weight: 600;
-        font-size: 1.1rem;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.15);
-        transition: all 0.3s ease;
-    }
-    .stButton>button:hover {
-        background: linear-gradient(45deg, #0d47a1, #1e88e5);
-        box-shadow: 0 6px 8px rgba(0,0,0,0.2);
-        transform: scale(1.02);
-    }
-    
-    /* Input Fields */
-    .stTextInput>div>div>input {
-        border-radius: 10px;
-        border: 1px solid #ccc;
-        padding: 10px;
+        font-size: 1rem;
+        box-shadow: var(--shadow-md);
+        transition: all var(--transition-base);
+        font-family: 'Inter', sans-serif;
+        letter-spacing: 0.025em;
+        position: relative;
+        overflow: hidden;
     }
     
-    /* Success/Price Box */
-    .metric-box {
-        text-align: center;
-        padding: 20px;
-        background: white;
-        border-radius: 12px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    .stButton > button:hover {
+        background: linear-gradient(135deg, var(--color-primary-dark) 0%, var(--color-primary) 100%);
+        box-shadow: var(--shadow-lg);
+        transform: translateY(-2px);
+    }
+    
+    .stButton > button:active {
+        transform: translateY(0);
+        box-shadow: var(--shadow-sm);
+    }
+    
+    /* Button Ripple Effect */
+    .stButton > button::before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 0;
+        height: 0;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.3);
+        transform: translate(-50%, -50%);
+        transition: width 0.6s, height 0.6s;
+    }
+    
+    .stButton > button:active::before {
+        width: 300px;
+        height: 300px;
+    }
+    
+    /* ===== INPUTS ===== */
+    .stTextInput > div > div > input,
+    .stNumberInput > div > div > input,
+    .stSelectbox > div > div > select,
+    .stTextArea > div > div > textarea {
+        border: 2px solid var(--color-border);
+        border-radius: var(--radius-md);
+        padding: 0.75rem 1rem;
+        font-family: 'Inter', sans-serif;
+        transition: all var(--transition-fast);
+        background: var(--color-bg-card);
+    }
+    
+    .stTextInput > div > div > input:focus,
+    .stNumberInput > div > div > input:focus,
+    .stSelectbox > div > div > select:focus,
+    .stTextArea > div > div > textarea:focus {
+        border-color: var(--color-primary);
+        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        outline: none;
+    }
+    
+    /* ===== CONTAINERS & CARDS ===== */
+    .element-container {
+        margin-bottom: 1rem;
+    }
+    
+    [data-testid="stContainer"] {
+        background: var(--color-bg-card);
+        border-radius: var(--radius-xl);
+        padding: 1.5rem;
+        box-shadow: var(--shadow-md);
+        border: 1px solid var(--color-border);
+        transition: all var(--transition-base);
+    }
+    
+    [data-testid="stContainer"]:hover {
+        box-shadow: var(--shadow-lg);
+        border-color: var(--color-primary-light);
+    }
+    
+    /* ===== EXPANDERS ===== */
+    .streamlit-expanderHeader {
+        background: linear-gradient(135deg, var(--color-bg-card) 0%, #fafbfc 100%);
+        border-radius: var(--radius-md);
+        padding: 1rem 1.5rem;
+        font-weight: 600;
+        color: var(--color-text-primary);
+        border: 1px solid var(--color-border);
+        transition: all var(--transition-fast);
+    }
+    
+    .streamlit-expanderHeader:hover {
+        background: linear-gradient(135deg, #fafbfc 0%, var(--color-bg-card) 100%);
+        border-color: var(--color-primary);
+    }
+    
+    /* ===== FILE UPLOADER ===== */
+    [data-testid="stFileUploader"] {
+        background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+        border: 2px dashed var(--color-border);
+        border-radius: var(--radius-lg);
+        padding: 2rem;
+        transition: all var(--transition-base);
+    }
+    
+    [data-testid="stFileUploader"]:hover {
+        border-color: var(--color-primary);
+        background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+    }
+    
+    /* ===== DATA EDITOR / TABLE ===== */
+    [data-testid="stDataFrame"] {
+        border-radius: var(--radius-lg);
+        overflow: hidden;
+        box-shadow: var(--shadow-md);
+    }
+    
+    /* ===== ALERTS & MESSAGES ===== */
+    .stSuccess, .stInfo, .stWarning, .stError {
+        border-radius: var(--radius-md);
+        padding: 1rem 1.5rem;
+        border-left-width: 4px;
+        box-shadow: var(--shadow-sm);
+    }
+    
+    .stSuccess {
+        background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+        border-left-color: var(--color-success);
+    }
+    
+    .stInfo {
+        background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+        border-left-color: var(--color-primary);
+    }
+    
+    .stWarning {
+        background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+        border-left-color: var(--color-warning);
+    }
+    
+    .stError {
+        background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+        border-left-color: var(--color-error);
+    }
+    
+    /* ===== SIDEBAR ===== */
+    [data-testid="stSidebar"] {
+        background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+        padding-top: 2rem;
+    }
+    
+    [data-testid="stSidebar"] .stRadio > label {
+        color: #e2e8f0;
+        font-weight: 500;
+        padding: 0.75rem 1rem;
+        border-radius: var(--radius-md);
+        transition: all var(--transition-fast);
+        margin-bottom: 0.5rem;
+        display: block;
+    }
+    
+    [data-testid="stSidebar"] .stRadio > label:hover {
+        background: rgba(255, 255, 255, 0.1);
+    }
+    
+    /* ===== CUSTOM UTILITY CLASSES ===== */
+    .gradient-border {
+        position: relative;
+        background: var(--color-bg-card);
+        border-radius: var(--radius-xl);
+        padding: 2px;
+        background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+    }
+    
+    .gradient-border > div {
+        background: var(--color-bg-card);
+        border-radius: calc(var(--radius-xl) - 2px);
+        padding: 1.5rem;
+    }
+    
+    /* ===== ANIMATIONS ===== */
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    @keyframes pulse {
+        0%, 100% {
+            opacity: 1;
+        }
+        50% {
+            opacity: 0.8;
+        }
+    }
+    
+    .animate-fade-in {
+        animation: fadeInUp 0.6s ease-out;
+    }
+    
+    /* ===== LOADING STATES ===== */
+    .stSpinner > div {
+        border-color: var(--color-primary);
+        border-right-color: transparent;
+    }
+    
+    /* ===== DIVIDERS ===== */
+    hr {
+        margin: 2rem 0;
+        border: none;
+        height: 1px;
+        background: linear-gradient(90deg, transparent 0%, var(--color-border) 50%, transparent 100%);
     }
     </style>
 """, unsafe_allow_html=True)
@@ -421,63 +666,94 @@ def send_email(customer_name, customer_email, customer_phone, order_details, upl
 # --- VIEWS ---
 
 def home_view():
-    st.title("Professional Print Services")
-    st.markdown("### High Quality Printing at Unbeatable Prices")
+    # Hero Section
+    st.markdown("""
+    <div style='text-align: center; padding: 3rem 1rem; background: linear-gradient(135deg, rgba(79, 70, 229, 0.05) 0%, rgba(6, 182, 212, 0.05) 100%); border-radius: 1rem; margin-bottom: 2rem;'>
+        <h1 style='font-size: 3rem; margin-bottom: 0.5rem;'>Professional Print Services 🖨️</h1>
+        <p style='font-size: 1.25rem; color: #64748b; max-width: 600px; margin: 0 auto;'>
+            High-quality printing at unbeatable prices. Upload, order, and track your prints seamlessly.
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
     
     # --- HOW IT WORKS SECTION ---
-    with st.container(border=True):
-        st.subheader("🚀 How It Works")
-        c1, c2, c3, c4 = st.columns(4)
-        with c1:
-            st.markdown("#### 1. Upload")
-            st.caption("Upload your PDF/Docs securely.")
-        with c2:
-            st.markdown("#### 2. Quote")
-            st.caption("Get instant price estimate.")
-        with c3:
-            st.markdown("#### 3. Order")
-            st.caption("Submit & Track online.")
-        with c4:
-            st.markdown("#### 4. Collect")
-            st.caption("Pay via QR & Pickup.")
-            
+    st.markdown("### 🚀 How It Works")
+    
+    cols = st.columns(4)
+    steps = [
+        {"icon": "📤", "title": "Upload", "desc": "Upload your PDF/Docs securely"},
+        {"icon": "💰", "title": "Quote", "desc": "Get instant price estimate"},
+        {"icon": "✅", "title": "Order", "desc": "Submit & Track online"},
+        {"icon": "📦", "title": "Collect", "desc": "Pay via QR & Pickup"}
+    ]
+    
+    for col, step in zip(cols, steps):
+        with col:
+            st.markdown(f"""
+            <div style='text-align: center; padding: 1.5rem; background: white; border-radius: 0.75rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: all 0.3s; border: 1px solid #e2e8f0;'>
+                <div style='font-size: 3rem; margin-bottom: 0.5rem;'>{step['icon']}</div>
+                <h4 style='color: #4f46e5; margin-bottom: 0.5rem;'>{step['title']}</h4>
+                <p style='font-size: 0.875rem; color: #64748b; margin: 0;'>{step['desc']}</p>
+            </div>
+            """, unsafe_allow_html=True)
+    
     st.divider()
     
     # Symmetrical 2-column layout
     col1, col2 = st.columns(2, gap="large")
     
-    # Left Column: Pricing
+    # Left Column: Pricing with gradient border
     with col1:
-        st.subheader("Pricing Info")
+        st.markdown("### 🏷️ Pricing Info")
         with st.container(border=True):
             st.markdown("""
-            ### 🏷️ Standard Rates
-            - **Black & White:** ₹2 per page
-            - **Full Color:** ₹10 per page
-            
-            ### ✨ Premium
-            - **Glossy Paper:** ₹20 per page
-            
-            <small style="color: grey;">*Prices may vary for bulk orders.</small>
+            <div style='background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%); padding: 1rem; border-radius: 0.5rem;'>
+                <h4 style='color: #4f46e5; margin-bottom: 1rem;'>Standard Rates</h4>
+                <div style='margin-bottom: 1rem;'>
+                    <span style='font-size: 1.5rem; font-weight: 700; color: #10b981;'>₹2</span>
+                    <span style='color: #64748b;'> / page</span>
+                    <div style='color: #64748b; font-size: 0.875rem;'>Black & White</div>
+                </div>
+                <div style='margin-bottom: 1rem;'>
+                    <span style='font-size: 1.5rem; font-weight: 700; color: #06b6d4;'>₹10</span>
+                    <span style='color: #64748b;'> / page</span>
+                    <div style='color: #64748b; font-size: 0.875rem;'>Full Color</div>
+                </div>
+                <div style='background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); padding: 0.75rem; border-radius: 0.5rem; border-left: 4px solid #f59e0b;'>
+                    <div style='font-weight: 600; color: #92400e; margin-bottom: 0.25rem;'>✨ Premium</div>
+                    <span style='font-size: 1.5rem; font-weight: 700; color: #92400e;'>₹20</span>
+                    <span style='color: #92400e;'> / page</span>
+                    <div style='color: #92400e; font-size: 0.875rem;'>Glossy Paper</div>
+                </div>
+                <p style='font-size: 0.75rem; color: #94a3b8; margin-top: 1rem; margin-bottom: 0;'>*Prices may vary for bulk orders.</p>
+            </div>
             """, unsafe_allow_html=True)
         
-    # Right Column: Calculator (Moved here for balance)
+    # Right Column: Calculator
     with col2:
-        st.subheader("Quick Cost Calculator")
+        st.markdown("### 🧮 Quick Cost Calculator")
         with st.container(border=True):
-            calc_pages = st.number_input("Number of Pages", min_value=1, value=10)
-            calc_color = st.selectbox("Color Mode", ["Black & White", "Full Color"])
-            calc_paper = st.selectbox("Paper Type", ["Standard", "Glossy"]) # Added missing selector for full calc
+            calc_pages = st.number_input("Number of Pages", min_value=1, value=10, key="calc_pages")
+            calc_color = st.selectbox("Color Mode", ["Black & White", "Full Color"], key="calc_color")
+            calc_paper = st.selectbox("Paper Type", ["Standard", "Glossy"], key="calc_paper")
             
             p_price = "Glossy" if calc_paper == "Glossy" else "Standard" 
             est = calculate_price(calc_pages, calc_color, p_price)
-            st.markdown(f"**Estimate: ₹{est:.2f}**")
+            
+            st.markdown(f"""
+            <div style='background: linear-gradient(135deg, #4f46e5 0%, #06b6d4 100%); color: white; padding: 1.5rem; border-radius: 0.75rem; text-align: center; margin-top: 1rem;'>
+                <div style='font-size: 0.875rem; opacity: 0.9; margin-bottom: 0.25rem;'>Estimated Total</div>
+                <div style='font-size: 2.5rem; font-weight: 700;'>₹{est:.2f}</div>
+            </div>
+            """, unsafe_allow_html=True)
             
     st.write("")
-    if st.button("Start Your Order ->", type="primary", use_container_width=True):
-        navigate_to('order')
     
-    # --- END HOME VIEW ---
+    # Call to Action
+    col_spacer1, col_cta, col_spacer2 = st.columns([1, 2, 1])
+    with col_cta:
+        if st.button("🚀 Start Your Order", type="primary", use_container_width=True):
+            navigate_to('order')
 
 
 
