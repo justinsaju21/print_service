@@ -15,73 +15,101 @@ import sqlite3
 import datetime
 import extra_streamlit_components as stx
 
-# --- DATABASE SETUP ---
-def init_db():
-    conn = sqlite3.connect('orders.db')
-    c = conn.cursor()
-    # Check if payment_status column exists, if not add it (Migration)
-    try:
-        c.execute("SELECT payment_status FROM orders LIMIT 1")
-    except sqlite3.OperationalError:
-        try:
-            c.execute("ALTER TABLE orders ADD COLUMN payment_status TEXT DEFAULT 'Unpaid'")
-        except:
-            pass 
+from streamlit_gsheets import GSheetsConnection
 
-    c.execute('''CREATE TABLE IF NOT EXISTS orders
-                 (id INTEGER PRIMARY KEY AUTOINCREMENT, 
-                  date TEXT, 
-                  name TEXT, 
-                  phone TEXT, 
-                  email TEXT, 
-                  status TEXT, 
-                  payment_status TEXT DEFAULT 'Unpaid',
-                  amount REAL,
-                  details TEXT)''')
-    conn.commit()
-    conn.close()
+# --- GOOGLE SHEETS DB SETUP ---
 
-def save_order(name, phone, email, amount, details):
-    conn = sqlite3.connect('orders.db')
-    c = conn.cursor()
-    date_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    c.execute("INSERT INTO orders (date, name, phone, email, status, payment_status, amount, details) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-              (date_str, name, phone, email, 'Pending', 'Unpaid', amount, str(details)))
-    order_id = c.lastrowid
-    conn.commit()
-    conn.close()
-    return order_id
+# Constants
+SPREADSHEET_URL = "https://docs.google.com/spreadsheets/d/1GA6TMom4CouSNFEesCEANqe3ZtP2MKk4d9PfsTXmPRQ/edit?gid=0#gid=0"
 
-def get_orders_by_phone(phone):
-    conn = sqlite3.connect('orders.db')
-    try:
-        df = pd.read_sql_query("SELECT * FROM orders WHERE phone = ? ORDER BY id DESC", conn, params=(phone,))
-        if 'payment_status' not in df.columns:
-            df['payment_status'] = 'Unpaid'
-    except Exception:
-        df = pd.DataFrame()
-    conn.close()
-    return df
+def get_db_connection():
+    return st.connection("gsheets", type=GSheetsConnection)
 
 def get_all_orders():
-    conn = sqlite3.connect('orders.db')
+    conn = get_db_connection()
     try:
-        df = pd.read_sql_query("SELECT * FROM orders ORDER BY id DESC", conn)
-        if 'payment_status' not in df.columns:
-            df['payment_status'] = 'Unpaid'
+        # ttl=0 ensures we fetch the latest data every time
+        df = conn.read(spreadsheet=SPREADSHEET_URL, ttl=0)
+        # Ensure columns exist if sheet is empty
+        expected_cols = ['id', 'date', 'name', 'phone', 'email', 'status', 'payment_status', 'amount', 'details']
+        if df.empty or not set(expected_cols).issubset(df.columns):
+            # Return empty DF with correct structure if fresh
+            return pd.DataFrame(columns=expected_cols)
+        
+        # Handle Potential NaN for cleaner UI
+        df = df.fillna("")
+        # Force ID to be numeric if possible
+        df['id'] = pd.to_numeric(df['id'], errors='coerce').fillna(0).astype(int)
+        return df
     except Exception as e:
+        # Fallback/Error logging
+        # st.error(f"DB Error: {e}")
+        return pd.DataFrame(columns=['id', 'date', 'name', 'phone', 'email', 'status', 'payment_status', 'amount', 'details'])
+
+def save_order(name, phone, email, amount, details):
+    conn = get_db_connection()
+    df = get_all_orders()
+    
+    # Generate New ID
+    if not df.empty:
+        try:
+            current_max = df['id'].max()
+            new_id = int(current_max) + 1
+        except:
+            new_id = 1
+    else:
+        new_id = 1
         df = pd.DataFrame(columns=['id', 'date', 'name', 'phone', 'email', 'status', 'payment_status', 'amount', 'details'])
-    finally:
-        conn.close()
-    return df
+
+    date_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    
+    new_order = pd.DataFrame([{
+        "id": new_id,
+        "date": date_str,
+        "name": name, 
+        "phone": phone,
+        "email": email,
+        "status": "Pending",
+        "payment_status": "Unpaid",
+        "amount": amount,
+        "details": str(details)
+    }])
+    
+    updated_df = pd.concat([df, new_order], ignore_index=True)
+    
+    # Write back to Sheet
+    conn.update(spreadsheet=SPREADSHEET_URL, data=updated_df)
+    
+    return new_id
 
 def update_status(order_id, new_status, payment_status='Unpaid'):
-    conn = sqlite3.connect('orders.db')
-    c = conn.cursor()
-    # Handle optional payment_status update if passed, logic needs to be robust
-    c.execute("UPDATE orders SET status = ?, payment_status = ? WHERE id = ?", (new_status, payment_status, order_id))
-    conn.commit()
-    conn.close()
+    conn = get_db_connection()
+    df = get_all_orders()
+    
+    if not df.empty:
+        # Find row with this ID
+        mask = df['id'] == int(order_id)
+        if mask.any():
+            df.loc[mask, 'status'] = new_status
+            df.loc[mask, 'payment_status'] = payment_status
+            conn.update(spreadsheet=SPREADSHEET_URL, data=df)
+
+def get_orders_by_phone(phone):
+    df = get_all_orders()
+    if df.empty: return df
+    
+    # String match phone
+    # Clean both sides to ensure matching (strip spaces)
+    # df['phone'] might be int or str
+    df['phone_str'] = df['phone'].astype(str).str.strip()
+    target_phone = str(phone).strip()
+    
+    filtered = df[df['phone_str'] == target_phone].sort_values(by='id', ascending=False)
+    return filtered
+
+def init_db():
+    # Deprecated/No-op for Sheets, but kept for main() compatibility
+    pass
 
 # --- CONFIGURATION & STYLING ---
 st.set_page_config(
