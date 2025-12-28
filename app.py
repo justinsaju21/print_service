@@ -658,20 +658,27 @@ def admin_view():
         
         msg = urllib.parse.quote(f"Hi {row['name']}, your Order #{row['id']} is {row['status']}! {payment_msg}")
         
-        p = str(row['phone']).strip()
         
-        # 1. Remove ANY non-digit characters (including + for a moment to normalize)
+        # Robust Phone Cleaning for Google Sheets Floats (e.g. 9998887777.0)
+        p_str = str(row['phone']).strip()
+        if p_str.endswith(".0"): 
+             p_str = p_str[:-2] # Remote the .0 part first
+        
+        # Now remove non-digits
         import re
-        p_digits = re.sub(r'\D', '', p)
+        p_digits = re.sub(r'\D', '', p_str)
         
-        # 2. Check logic for India (+91)
-        # If it's a 10 digit number (e.g. 9998887777), treat as local IN number.
+        # Logic for India (+91)
         if len(p_digits) == 10:
             final_phone = "91" + p_digits
         elif len(p_digits) == 12 and p_digits.startswith("91"):
             final_phone = p_digits
         else:
-            final_phone = "91" + p_digits # Aggressive fallback to 91 prefix
+            # Fallback for weird lengths: If 11 digits starting with 0? Remove 0.
+            if len(p_digits) == 11 and p_digits.startswith("0"):
+                 final_phone = "91" + p_digits[1:]
+            else:
+                 final_phone = "91" + p_digits 
 
         return f"https://wa.me/{final_phone}?text={msg}"
 
