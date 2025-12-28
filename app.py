@@ -156,7 +156,8 @@ def init_db():
     # Deprecated/No-op for Sheets, but kept for main() compatibility
     pass
 
-# --- CONFIGURATION & STYLING ---
+# --- CONFIGURATION & CONSTANTS ---
+ADMIN_PHONE = "918606884320"  # For WhatsApp links
 st.set_page_config(
     page_title="Professional Print Services",
     page_icon="🖨️",
@@ -1075,7 +1076,7 @@ def track_orders_view():
             st.divider()
             st.markdown("### Need Help?")
             help_msg = urllib.parse.quote(f"Hi, I need help with my orders for phone {phone_input}.")
-            st.link_button("💬 Contact Shop Owner on WhatsApp", f"https://wa.me/918606884320?text={help_msg}", use_container_width=True)
+            st.link_button("💬 Contact Shop Owner on WhatsApp", f"https://wa.me/{ADMIN_PHONE}?text={help_msg}", use_container_width=True)
             
         else:
             st.error("Please enter a phone number.")
@@ -1089,34 +1090,40 @@ def main():
         st.image("https://cdn-icons-png.flaticon.com/512/3142/3142200.png", width=100) # Placeholder generic print icon
         st.title("Print Service")
         
-        # Mapping generic names to internal IDs
+        # Mapping generic names to internal IDs (Public)
         NAV_MAP = {
             "🏠 Home": "home",
             "📄 Order Now": "order",
-            "📦 Track Orders": "track",
-            "🔒 Admin Panel": "admin"
+            "📦 Track Orders": "track"
         }
         
         # Reverse map for display
         REV_NAV_MAP = {v: k for k, v in NAV_MAP.items()}
         
-        # Current selection based on state
-        current_nav = REV_NAV_MAP.get(st.session_state.get('page', 'home'), "🏠 Home")
+        # Current selection based on state (handle admin case)
+        current_page = st.session_state.get('page', 'home')
+        current_nav = REV_NAV_MAP.get(current_page, "🏠 Home")
         
         selected_page = st.radio(
             "Navigation", 
             list(NAV_MAP.keys()), 
-            index=list(NAV_MAP.keys()).index(current_nav),
+            index=list(NAV_MAP.keys()).index(current_nav) if current_nav in NAV_MAP else 0,
             label_visibility="collapsed"
         )
         
         # Update state if changed
-        if NAV_MAP[selected_page] != st.session_state['page']:
+        if selected_page in NAV_MAP and NAV_MAP[selected_page] != st.session_state['page']:
             st.session_state['page'] = NAV_MAP[selected_page]
             st.rerun()
 
-        st.divider()
-        st.info("📞 Help: +91 8606884320")
+        # Large spacer to force scrolling (Hidden Admin)
+        for _ in range(100):
+            st.sidebar.write("")
+            
+        st.sidebar.divider()
+        if st.sidebar.button("🔒 Portal", use_container_width=True):
+            st.session_state['page'] = 'admin'
+            st.rerun()
 
     if st.session_state['page'] == 'home':
         home_view()
