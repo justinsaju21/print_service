@@ -47,36 +47,7 @@ st.markdown("""
         font-family: 'Roboto', sans-serif;
     }
     
-    /* Price Card Styling */
-    .price-card {
-        background: white;
-        padding: 25px;
-        border-radius: 15px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-        border-top: 5px solid #1565c0;
-        height: 100%;
-        transition: transform 0.2s;
-        color: #333333; /* Explicitly force dark text */
-    }
-    .price-card:hover {
-        transform: translateY(-5px);
-    }
-    .price-card h3 {
-        margin-top: 0;
-        border-bottom: 1px solid #eee;
-        padding-bottom: 10px;
-        color: #1565c0; /* Brand color for header */
-    }
-    .price-card ul {
-        list-style-type: none;
-        padding: 0;
-        color: #444; /* Dark gray for list items */
-    }
-    .price-card li {
-        padding: 8px 0;
-        font-size: 1.1rem;
-        border-bottom: 1px solid #f0f0f0;
-    }
+    /* Price Card Styling Removed (Using Native Containers) */
     
     /* Button Styling */
     .stButton>button {
@@ -249,16 +220,18 @@ def home_view():
     
     # Left Column: Pricing
     with col1:
-        st.markdown("""
-        <div class="price-card">
-            <h3>Pricing Info</h3>
-            <ul>
-                <li><strong>Black & White:</strong> ₹2 per page</li>
-                <li><strong>Full Color:</strong> ₹10 per page</li>
-                <li><strong>Glossy Paper:</strong> ₹20 per page</li>
-            </ul>
-        </div>
-        """, unsafe_allow_html=True)
+        st.subheader("Pricing Info")
+        with st.container(border=True):
+            st.markdown("""
+            ### 🏷️ Standard Rates
+            - **Black & White:** ₹2 per page
+            - **Full Color:** ₹10 per page
+            
+            ### ✨ Premium
+            - **Glossy Paper:** ₹20 per page
+            
+            <small style="color: grey;">*Prices may vary for bulk orders.</small>
+            """, unsafe_allow_html=True)
         
     # Right Column: Calculator (Moved here for balance)
     with col2:
