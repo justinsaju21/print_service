@@ -13,11 +13,21 @@ import io
 import urllib.parse
 import sqlite3
 import datetime
+import extra_streamlit_components as stx
 
 # --- DATABASE SETUP ---
 def init_db():
     conn = sqlite3.connect('orders.db')
     c = conn.cursor()
+    # Check if payment_status column exists, if not add it (Migration)
+    try:
+        c.execute("SELECT payment_status FROM orders LIMIT 1")
+    except sqlite3.OperationalError:
+        try:
+            c.execute("ALTER TABLE orders ADD COLUMN payment_status TEXT DEFAULT 'Unpaid'")
+        except:
+            pass 
+
     c.execute('''CREATE TABLE IF NOT EXISTS orders
                  (id INTEGER PRIMARY KEY AUTOINCREMENT, 
                   date TEXT, 
@@ -25,6 +35,7 @@ def init_db():
                   phone TEXT, 
                   email TEXT, 
                   status TEXT, 
+                  payment_status TEXT DEFAULT 'Unpaid',
                   amount REAL,
                   details TEXT)''')
     conn.commit()
@@ -34,31 +45,41 @@ def save_order(name, phone, email, amount, details):
     conn = sqlite3.connect('orders.db')
     c = conn.cursor()
     date_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    c.execute("INSERT INTO orders (date, name, phone, email, status, amount, details) VALUES (?, ?, ?, ?, ?, ?, ?)",
-              (date_str, name, phone, email, 'Pending', amount, str(details)))
+    c.execute("INSERT INTO orders (date, name, phone, email, status, payment_status, amount, details) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+              (date_str, name, phone, email, 'Pending', 'Unpaid', amount, str(details)))
     order_id = c.lastrowid
     conn.commit()
     conn.close()
     return order_id
 
+def get_orders_by_phone(phone):
+    conn = sqlite3.connect('orders.db')
+    try:
+        df = pd.read_sql_query("SELECT * FROM orders WHERE phone = ? ORDER BY id DESC", conn, params=(phone,))
+        if 'payment_status' not in df.columns:
+            df['payment_status'] = 'Unpaid'
+    except Exception:
+        df = pd.DataFrame()
+    conn.close()
+    return df
 
 def get_all_orders():
     conn = sqlite3.connect('orders.db')
     try:
         df = pd.read_sql_query("SELECT * FROM orders ORDER BY id DESC", conn)
+        if 'payment_status' not in df.columns:
+            df['payment_status'] = 'Unpaid'
     except Exception as e:
-        # Fallback if table doesn't exist (e.g. fresh start)
-        st.error(f"Error reading database: {e}")
-        # Return empty dataframe with expected columns
-        df = pd.DataFrame(columns=['id', 'date', 'name', 'phone', 'email', 'status', 'amount', 'details'])
+        df = pd.DataFrame(columns=['id', 'date', 'name', 'phone', 'email', 'status', 'payment_status', 'amount', 'details'])
     finally:
         conn.close()
     return df
 
-def update_status(order_id, new_status):
+def update_status(order_id, new_status, payment_status='Unpaid'):
     conn = sqlite3.connect('orders.db')
     c = conn.cursor()
-    c.execute("UPDATE orders SET status = ? WHERE id = ?", (new_status, order_id))
+    # Handle optional payment_status update if passed, logic needs to be robust
+    c.execute("UPDATE orders SET status = ?, payment_status = ? WHERE id = ?", (new_status, payment_status, order_id))
     conn.commit()
     conn.close()
 
@@ -72,6 +93,9 @@ st.set_page_config(
 # Initialize Session State
 if 'page' not in st.session_state:
     st.session_state['page'] = 'home'
+
+# Cookie Manager for Persistence
+cookie_manager = stx.CookieManager(key="cookie_manager")
 
 # Pricing Constants
 PRICE_BW = 2.0
