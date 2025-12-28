@@ -87,6 +87,15 @@ def save_order(name, phone, email, amount, details):
         df = pd.DataFrame(columns=['id', 'date', 'name', 'phone', 'email', 'status', 'payment_status', 'amount', 'details'])
 
     date_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    # Clean phone strictly before saving
+    import re
+    if phone:
+        phone = re.sub(r'\D', '', str(phone))
+        # If user typed 12 digits starting with 91, keep it. 
+        # If 10, keep it.
+        # But for 'clean' DB, 10 digits is preferred if local.
+        # Let's just save valid digits.
     
     new_order = pd.DataFrame([{
         "id": new_id,
@@ -468,9 +477,19 @@ def order_view():
         col1, col2 = st.columns(2)
         with col1:
             name = st.text_input("Full Name")
-            phone = st.text_input("Phone Number")
+            phone_raw = st.text_input("Mobile Number (10 digits)", placeholder="9876543210")
+            # Auto-clean input immediately (remove spaces/dashes)
+            if phone_raw:
+                # Keep only digits
+                import re
+                phone = re.sub(r'\D', '', phone_raw)
+            else:
+                phone = ""
+                
+            if phone and len(phone) != 10:
+                st.error("Please enter a valid 10-digit mobile number.")
         with col2:
-            email = st.text_input("Email Address")
+            email = st.text_input("Email Address", placeholder="name@example.com")
 
     # --- 2. Upload (Reactive) ---
     st.subheader("2. Document Upload")
