@@ -571,14 +571,16 @@ def generate_receipt(customer_name, order_details, total_cost, file_breakdown):
 
 def send_email(customer_name, customer_email, customer_phone, order_details, uploaded_files, comments, total_cost, file_breakdown):
     try:
-        smtp_server = st.secrets["smtp_server"]
-        smtp_port = st.secrets["smtp_port"]
-        sender_email = st.secrets["sender_email"]
-        sender_password = st.secrets["sender_password"]
+        # Check standard nesting or fallback to flat for dev
+        email_secrets = st.secrets.get("email", st.secrets)
+        smtp_server = email_secrets["smtp_server"]
+        smtp_port = email_secrets["smtp_port"]
+        sender_email = email_secrets["sender_email"]
+        sender_password = email_secrets["sender_password"]
         receiver_email = "justinsaju100@gmail.com"  # Updated shop owner email
     except Exception:
         # Development mode fallback
-        return False, "SMTP Configuration missing."
+        return False, "SMTP Configuration missing or misconfigured in secrets."
 
     msg = MIMEMultipart()
     msg['From'] = sender_email
@@ -1051,18 +1053,24 @@ def admin_view():
                 # Send Email
                 # Re-using send_email? No, that's for receipt. Need simple status email.
                 try:
+                    email_secrets = st.secrets.get("email", st.secrets)
+                    s_email = email_secrets["sender_email"]
+                    s_pass = email_secrets["sender_password"]
+                    s_server = email_secrets["smtp_server"]
+                    s_port = email_secrets["smtp_port"]
+
                     msg = MIMEMultipart()
-                    msg['From'] = st.secrets["sender_email"]
+                    msg['From'] = s_email
                     msg['To'] = sel_order['email']
                     msg['Subject'] = f"Order #{sel_order['id']} is {sel_order['status']}! 🚀"
                     
                     body = f"Hi {sel_order['name']},\n\nYour order is now: {sel_order['status']}.\n\nPlease arrange for pickup/delivery.\n\nThank you!"
                     msg.attach(MIMEText(body, 'plain'))
                     
-                    server = smtplib.SMTP(st.secrets["smtp_server"], st.secrets["smtp_port"])
+                    server = smtplib.SMTP(s_server, s_port)
                     server.starttls()
-                    server.login(st.secrets["sender_email"], st.secrets["sender_password"])
-                    server.sendmail(st.secrets["sender_email"], sel_order['email'], msg.as_string())
+                    server.login(s_email, s_pass)
+                    server.sendmail(s_email, sel_order['email'], msg.as_string())
                     server.quit()
                     st.success(f"Email sent to {sel_order['email']}!")
                 except Exception as e:
