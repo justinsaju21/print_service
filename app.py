@@ -225,9 +225,15 @@ st.markdown("""
         font-family: 'Inter', sans-serif;
     }
 
-    /* Force high contrast for labels and headers */
-    label p, .stMarkdown p, h1, h2, h3, h4 {
+    /* Force high contrast for labels and headers on the dark main background */
+    .main h1, .main h2:not(.light-box h2), .main h3:not(.light-box h3), .main h4:not(.light-box h4), 
+    .main label p, .main .stMarkdown:not(.light-box) p {
         color: #f8fafc !important;
+    }
+    
+    /* Specific overrides for light boxes/cards */
+    .light-box, .light-box p, .light-box h1, .light-box h2, .light-box h3, .light-box h4, .light-box span {
+        color: #1e293b !important;
     }
     
     h1 {
@@ -638,10 +644,10 @@ def home_view():
     for col, step in zip(cols, steps):
         with col:
             st.markdown(f"""
-            <div style='text-align: center; padding: 1.5rem; background: white; border-radius: 0.75rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: all 0.3s; border: 1px solid #e2e8f0;'>
+            <div class='light-box' style='text-align: center; padding: 1.5rem; background: white; border-radius: 0.75rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: all 0.3s; border: 1px solid #e2e8f0;'>
                 <div style='font-size: 3rem; margin-bottom: 0.5rem;'>{step['icon']}</div>
-                <h4 style='color: #4f46e5; margin-bottom: 0.5rem;'>{step['title']}</h4>
-                <p style='font-size: 0.875rem; color: #64748b; margin: 0;'>{step['desc']}</p>
+                <h4 style='color: #4f46e5 !important; margin-bottom: 0.5rem;'>{step['title']}</h4>
+                <p style='font-size: 0.875rem; color: #64748b !important; margin: 0;'>{step['desc']}</p>
             </div>
             """, unsafe_allow_html=True)
     
@@ -771,9 +777,9 @@ def order_view():
     
     # Highlight the price
     st.markdown(f"""
-    <div style="text-align: center; padding: 20px; background-color: #e8f5e9; border-radius: 10px; border: 2px solid #4caf50;">
-        <h2 style="color: #2e7d32; margin:0;">Total Estimated Cost: ₹{estimated_total:.2f}</h2>
-        <p style="margin:0; color: #555;">({detected_pages} pages @ {color_mode} / {paper_type})</p>
+    <div class='light-box' style="text-align: center; padding: 20px; background-color: #e8f5e9; border-radius: 10px; border: 2px solid #4caf50;">
+        <h2 style="color: #2e7d32 !important; margin:0;">Total Estimated Cost: ₹{estimated_total:.2f}</h2>
+        <p style="margin:0; color: #555 !important;">({detected_pages} pages @ {color_mode} / {paper_type})</p>
     </div>
     """, unsafe_allow_html=True)
     
@@ -828,10 +834,10 @@ def order_view():
                     wa_link = f"https://wa.me/918606884320?text={wa_message}" 
                     
                     st.markdown(f"""
-                    <div style="background-color: #e3f2fd; padding: 20px; border-radius: 10px; text-align: center; border-left: 5px solid #2196f3;">
-                        <h3 style="color: #0d47a1; margin-top: 0;">Order #{order_id} Received! ✅</h3>
-                        <p style="font-size: 1.1em;">We have received your order details.</p>
-                        <p style="font-size: 1.1em; font-weight: bold; color: #d32f2f;">
+                    <div class='light-box' style="background-color: #e3f2fd; padding: 20px; border-radius: 10px; text-align: center; border-left: 5px solid #2196f3;">
+                        <h3 style="color: #0d47a1 !important; margin-top: 0;">Order #{order_id} Received! ✅</h3>
+                        <p style="font-size: 1.1em; color: #1e293b !important;">We have received your order details.</p>
+                        <p style="font-size: 1.1em; font-weight: bold; color: #d32f2f !important;">
                             ⚠️ PLEASE WAIT for a confirmation message on WhatsApp before making the payment.
                         </p>
                     </div>
@@ -1024,10 +1030,10 @@ def track_orders_view():
                                 <p style='margin: 0.25rem 0 0 0; color: #64748b; font-size: 0.875rem;'>{row['date']}</p>
                             </div>
                             <div style='text-align: right;'>
-                                <div style='background: {bg}; color: {color}; padding: 0.5rem 1rem; border-radius: 9999px; font-weight: 600; font-size: 0.875rem; display: inline-block; margin-bottom: 0.5rem;'>
+                                <div style='background: {bg}; color: {color} !important; padding: 0.5rem 1rem; border-radius: 9999px; font-weight: 600; font-size: 0.875rem; display: inline-block; margin-bottom: 0.5rem;'>
                                     {label}
                                 </div>
-                                <div style='background: {pay_bg}; color: {pay_color}; padding: 0.25rem 0.75rem; border-radius: 9999px; font-weight: 600; font-size: 0.75rem; display: inline-block;'>
+                                <div style='background: {pay_bg}; color: {pay_color} !important; padding: 0.25rem 0.75rem; border-radius: 9999px; font-weight: 600; font-size: 0.75rem; display: inline-block;'>
                                     {pay_status}
                                 </div>
                             </div>
