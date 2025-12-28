@@ -523,7 +523,7 @@ def admin_view():
     with st.sidebar:
         st.header("Login")
         pwd = st.text_input("Password", type="password")
-        if pwd == "admin123": # Hardcoded for simplicity as requested
+        if pwd == "admin123": 
             st.session_state['admin_logged_in'] = True
         elif pwd:
             st.error("Invalid Password")
@@ -539,18 +539,14 @@ def admin_view():
     
     df = get_all_orders()
     
-    # Create WhatsApp Link Column
-    # Link format: https://wa.me/{phone}?text=...
-    # We construct it dynamically
-    
-    # We can't generate the dynamic link easily inside data_editor for every row unless we pre-calculate it
-    # Let's add a 'Notify Link' column to the DF for display
-    
+    # Ensure payment_status exists in DF (fallback for old DBs read without migration in pure pandas read)
+    if 'payment_status' not in df.columns:
+        df['payment_status'] = 'Unpaid'
+
     def make_wa_link(row):
-        msg = urllib.parse.quote(f"Hi {row['name']}, your Order #{row['id']} is {row['status']}!")
-        # Ensure phone has country code. Assuming Indian +91 for now if missing, or use as is
+        msg = urllib.parse.quote(f"Hi {row['name']}, your Order #{row['id']} is {row['status']}! Payment: {row['payment_status']}.")
         p = str(row['phone']).strip()
-        if not p.startswith("+"): p = "+91" + p # Defaulting to IN
+        if not p.startswith("+"): p = "+91" + p 
         return f"https://wa.me/{p}?text={msg}"
 
     if not df.empty:
@@ -561,12 +557,17 @@ def admin_view():
             column_config={
                 "notify_link": st.column_config.LinkColumn(
                     "Notify Customer",
-                    help="Click to open WhatsApp with pre-filled status message",
+                    help="Click to open WhatsApp",
                     display_text="Open WhatsApp 💬"
                 ),
                 "status": st.column_config.SelectboxColumn(
                     "Status",
                     options=["Pending", "Printing", "Ready for Pickup", "Completed"],
+                    required=True
+                ),
+                "payment_status": st.column_config.SelectboxColumn(
+                    "Payment",
+                    options=["Unpaid", "Paid", "Refunded"],
                     required=True
                 )
             },
@@ -575,38 +576,64 @@ def admin_view():
             key="order_editor"
         )
         
-        # Detect Changes
-        # st.data_editor currently relies on user interaction. 
-        # To save changes back to DB, we compare edited_df with stored DF or rely on state
-        
-        # Simpler approach: Iterate over edited_df and update DB for Changed Statuses
-        # But data_editor returns the current state. We can just update "onChange"?
-        # Actually, Streamlit data_editor returns a NEW dataframe. 
-        # We should iterate and update DB where status differs? 
-        # Or simpler: Just Provide a "Save Changes" button?
-        
-        if st.button("Save Status Changes"):
-            # Iterate and update
-            # Note: In a real app with pagination this is inefficient, but fine for SQLite here
+        if st.button("Save Changes"):
             for index, row in edited_df.iterrows():
-                # We update all, filtering by ID
-                # Optimization: Only update if changed? 
-                # For now, simplistic update is robust enough
-                update_status(row['id'], row['status'])
+                update_status(row['id'], row['status'], row['payment_status'])
             st.success("Database Updated!")
-            st.rerun() # Refresh to show saved state
+            st.rerun()
             
     else:
         st.info("No orders found in database.")
+
+def track_orders_view():
+    st.title("Track My Orders 📦")
+    st.markdown("View your order history and status.")
+    
+    # 1. Try to get phone from Cookie
+    cookie_phone = cookie_manager.get(cookie="user_phone")
+    
+    # 2. Input Field (Prefilled if cookie exists)
+    phone_input = st.text_input("Enter your Phone Number to track", value=cookie_phone if cookie_phone else "")
+    
+    if st.button("Track Orders") or phone_input:
+        if phone_input:
+            # Save to cookie for future
+            cookie_manager.set("user_phone", phone_input, expires_at=datetime.datetime.now() + datetime.timedelta(days=30))
+            
+            orders = get_orders_by_phone(phone_input)
+            
+            if not orders.empty:
+                st.success(f"Found {len(orders)} orders for {phone_input}")
+                
+                for index, row in orders.iterrows():
+                    with st.container(border=True):
+                        c1, c2, c3, c4 = st.columns([1, 2, 1, 1])
+                        with c1:
+                            st.write(f"**Order #{row['id']}**")
+                            st.caption(row['date'])
+                        with c2:
+                            st.write(f"**Details:** {row['details']}")
+                        with c3:
+                            status_color = "orange" if row['status'] == 'Pending' else "green" if row['status'] == 'Completed' else "blue"
+                            st.markdown(f"Status: <span style='color:{status_color}; font-weight:bold'>{row['status']}</span>", unsafe_allow_html=True)
+                        with c4:
+                            pay_color = "green" if row.get('payment_status', 'Unpaid') == 'Paid' else "red"
+                            st.markdown(f"Pay: <span style='color:{pay_color}; font-weight:bold'>{row.get('payment_status', 'Unpaid')}</span>", unsafe_allow_html=True)
+                            st.write(f"**₹{row['amount']:.2f}**")
+            else:
+                st.warning("No orders found for this number.")
+        else:
+            st.error("Please enter a phone number.")
 
 
 # --- MAIN CONTROLLER ---
 
 def main():
-    # Sidebar Navigation for Admin
+    # Sidebar Navigation
     with st.sidebar:
         st.title("Navigation")
         if st.button("🏠 Home"): navigate_to('home')
+        if st.button("📦 Track Orders"): navigate_to('track')
         if st.button("🔒 Admin Panel"): navigate_to('admin')
 
     if st.session_state['page'] == 'home':
@@ -615,6 +642,8 @@ def main():
         order_view()
     elif st.session_state['page'] == 'admin':
         admin_view()
+    elif st.session_state['page'] == 'track':
+        track_orders_view()
 
 if __name__ == "__main__":
     init_db() # Ensure DB/Table exists on startup

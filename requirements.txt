@@ -2,3 +2,4 @@ streamlit
 PyPDF2
 reportlab
 pandas
+extra-streamlit-components
