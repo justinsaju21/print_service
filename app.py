@@ -41,10 +41,18 @@ def save_order(name, phone, email, amount, details):
     conn.close()
     return order_id
 
+
 def get_all_orders():
     conn = sqlite3.connect('orders.db')
-    df = pd.read_sql_query("SELECT * FROM orders ORDER BY id DESC", conn)
-    conn.close()
+    try:
+        df = pd.read_sql_query("SELECT * FROM orders ORDER BY id DESC", conn)
+    except Exception as e:
+        # Fallback if table doesn't exist (e.g. fresh start)
+        st.error(f"Error reading database: {e}")
+        # Return empty dataframe with expected columns
+        df = pd.DataFrame(columns=['id', 'date', 'name', 'phone', 'email', 'status', 'amount', 'details'])
+    finally:
+        conn.close()
     return df
 
 def update_status(order_id, new_status):
