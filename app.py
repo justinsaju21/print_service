@@ -58,6 +58,9 @@ st.markdown("""
         transition: transform 0.2s;
         color: #333333; /* Explicitly force dark text */
     }
+    .price-card:hover {
+        transform: translateY(-5px);
+    }
     .price-card h3 {
         margin-top: 0;
         border-bottom: 1px solid #eee;
@@ -159,7 +162,7 @@ def send_email(customer_name, customer_email, customer_phone, order_details, upl
         smtp_port = st.secrets["smtp_port"]
         sender_email = st.secrets["sender_email"]
         sender_password = st.secrets["sender_password"]
-        receiver_email = "your_email@example.com" 
+        receiver_email = "justinsaju100@gmail.com"  # Updated shop owner email
     except Exception:
         # Development mode fallback
         return False, "SMTP Configuration missing."
@@ -167,14 +170,15 @@ def send_email(customer_name, customer_email, customer_phone, order_details, upl
     msg = MIMEMultipart()
     msg['From'] = sender_email
     msg['To'] = receiver_email
-    msg['Subject'] = f"New Print Order from {customer_name}"
+    msg['Cc'] = customer_email # Add CC header
+    msg['Subject'] = f"Print Order: {customer_name}"
 
     # Format file breakdown for email
-    files_str = "\\n".join([f"    - {f}" for f in file_breakdown])
+    files_str = "\n".join([f"    - {f}" for f in file_breakdown])
 
     body = f"""
-    New Order Received
-    ==================
+    New Print Order
+    ===============
     
     Customer Details:
     -----------------
@@ -192,7 +196,7 @@ def send_email(customer_name, customer_email, customer_phone, order_details, upl
     -------------
 {files_str}
     
-    Total Pages: {order_details['pages']} (User/Auto Count)
+    Total Pages: {order_details['pages']}
     
     -----------------------------------
     Total Estimated Cost: ₹{total_cost}
@@ -223,7 +227,11 @@ def send_email(customer_name, customer_email, customer_phone, order_details, upl
         server.starttls()
         server.login(sender_email, sender_password)
         text = msg.as_string()
-        server.sendmail(sender_email, receiver_email, text)
+        
+        # Send to both Shop Owner AND Customer
+        recipients = [receiver_email, customer_email]
+        server.sendmail(sender_email, recipients, text)
+        
         server.quit()
         return True, "Email sent successfully"
     except Exception as e:
@@ -236,7 +244,8 @@ def home_view():
     st.title("Professional Print Services")
     st.markdown("### High Quality Printing at Unbeatable Prices")
     
-    col1, col2 = st.columns([3, 2], gap="medium")
+    # Updated to 1:1 ratio for symmetry
+    col1, col2 = st.columns(2, gap="large")
     
     with col1:
         st.markdown("""
@@ -250,27 +259,32 @@ def home_view():
         </div>
         """, unsafe_allow_html=True)
         
+        st.write("") # Spacer
+        
         st.subheader("Quick Cost Calculator")
         with st.container(border=True):
             calc_pages = st.number_input("Number of Pages", min_value=1, value=10)
             calc_color = st.selectbox("Color Mode", ["Black & White", "Full Color"])
             calc_paper = st.selectbox("Paper Selection", ["Standard", "Glossy"])
             
-            # Helper to map selection to our pricing model logic
             p_type_logic = "Glossy" if calc_paper == "Glossy" else "Standard"
             est_cost = calculate_price(calc_pages, calc_color, p_type_logic)
             
             st.markdown(f"### Estimated: ₹{est_cost:.2f}")
 
     with col2:
-        st.image("assets/qr_code.png", caption="Scan to Pay via GPay", width=250)
-        st.info("You can make the payment after uploading your order.")
+        # Centering the QR code visually in the column
+        st.markdown("<div style='text-align: center;'>", unsafe_allow_html=True)
+        st.image("assets/qr_code.png", caption="Scan to Pay via GPay", width=300)
+        st.info("Note: Please wait for order confirmation on WhatsApp before making payment.")
+        st.markdown("</div>", unsafe_allow_html=True)
 
     st.divider()
     
+    # Centered 'cta' button
     _, center_col, _ = st.columns([1, 2, 1])
     with center_col:
-        if st.button("UPLOAD DOCUMENTS & ORDER NOW"):
+        if st.button("UPLOAD DOCUMENTS & ORDER NOW", use_container_width=True):
             navigate_to('order')
 
 
@@ -368,9 +382,22 @@ def order_view():
                 if success:
                     st.success("Order Sent Successfully!")
                     st.balloons()
-                    st.markdown("### Next Step: Payment")
-                    st.image("assets/qr_code.png", width=200, caption="Scan to Pay")
-                    st.success(f"Please pay ₹{estimated_total:.2f} to confirm your order.")
+                    
+                    st.markdown("""
+                    <div style="background-color: #e3f2fd; padding: 20px; border-radius: 10px; text-align: center; border-left: 5px solid #2196f3;">
+                        <h3 style="color: #0d47a1; margin-top: 0;">Order Received! ✅</h3>
+                        <p style="font-size: 1.1em;">We have received your order details.</p>
+                        <p style="font-size: 1.1em; font-weight: bold; color: #d32f2f;">
+                            ⚠️ PLEASE WAIT for a confirmation message on WhatsApp before making the payment.
+                        </p>
+                        <p>Once confirmed, you can scan the QR code below.</p>
+                    </div>
+                    """, unsafe_allow_html=True)
+                    
+                    with st.expander("View Payment QR Code"):
+                         st.image("assets/qr_code.png", width=250, caption="Scan to Pay (Wait for confirmation first)")
+                         st.info(f"Amount to Pay: ₹{estimated_total:.2f}")
+
                 else:
                     if "SMTP" in msg or "missing" in msg: 
                          st.warning("Order Processed (Demo Mode)")
