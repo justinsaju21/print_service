@@ -667,16 +667,11 @@ def admin_view():
         # 2. Check logic for India (+91)
         # If it's a 10 digit number (e.g. 9998887777), treat as local IN number.
         if len(p_digits) == 10:
-            final_phone = "+91" + p_digits
-        # If it's 12 digits and starts with 91 (e.g. 919998887777), it has country code but no +
+            final_phone = "91" + p_digits
         elif len(p_digits) == 12 and p_digits.startswith("91"):
-            final_phone = "+" + p_digits
-        # If it's more than 10 digits, assume it might be valid with some other code? 
-        # But user insists on ensuring +91 is given.
+            final_phone = p_digits
         else:
-            # Fallback: Just assume it needs + unless it already has it (which we stripped)
-            # Actually, let's just force + prefix if safe
-            final_phone = "+" + p_digits if len(p_digits) > 10 else "+91" + p_digits
+            final_phone = "91" + p_digits # Aggressive fallback to 91 prefix
 
         return f"https://wa.me/{final_phone}?text={msg}"
 
@@ -761,6 +756,12 @@ def track_orders_view():
                             st.write(f"**₹{row['amount']:.2f}**")
             else:
                 st.warning("No orders found for this number.")
+                
+            # Contact Admin Option
+            st.divider()
+            help_msg = urllib.parse.quote(f"Hi, I need help with my orders for phone {phone_input}.")
+            st.link_button("💬 Contact Shop Owner on WhatsApp", f"https://wa.me/918606884320?text={help_msg}")
+            
         else:
             st.error("Please enter a phone number.")
 
