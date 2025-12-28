@@ -322,11 +322,6 @@ def order_view():
             with st.expander("See file details"):
                 for f in file_info:
                     st.write(f"- {f}")
-            
-            # Manual Override Option
-            if st.checkbox("Incorrect page count? Click to manually set pages."):
-                detected_pages = st.number_input("Enter actual total number of pages", min_value=1, value=detected_pages)
-                st.caption("Use this for Word documents or files where auto-detection might be inaccurate.")
 
 
     # --- 3. Preferences (Reactive) ---
