@@ -470,7 +470,7 @@ def order_view():
                     
                     # 2. WhatsApp Link (Now using Real Order ID)
                     wa_message = urllib.parse.quote(f"Hi, I just placed Order #{order_id}. Name: {name}. Please confirm.")
-                    wa_link = f"https://wa.me/91XXXXXXXXXX?text={wa_message}" 
+                    wa_link = f"https://wa.me/918606884320?text={wa_message}" 
                     
                     st.markdown(f"""
                     <div style="background-color: #e3f2fd; padding: 20px; border-radius: 10px; text-align: center; border-left: 5px solid #2196f3;">
@@ -609,4 +609,5 @@ def main():
         admin_view()
 
 if __name__ == "__main__":
+    init_db() # Ensure DB/Table exists on startup
     main()
