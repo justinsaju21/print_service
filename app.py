@@ -640,21 +640,26 @@ def admin_view():
         msg = urllib.parse.quote(f"Hi {row['name']}, your Order #{row['id']} is {row['status']}! {payment_msg}")
         
         p = str(row['phone']).strip()
-        # Clean phone number (remove non-digits except +)
-        import re
-        p_clean = re.sub(r'[^\d+]', '', p)
         
-        if not p_clean.startswith("+"): 
-            # If no country code, add +91
-            if len(p_clean) == 10:
-                p_clean = "+91" + p_clean
-            elif p_clean.startswith("91") and len(p_clean) == 12:
-                p_clean = "+" + p_clean
-            else:
-                 # Fallback if unsure, just prefix +91 if length is reasonable, else default to whatever user gave
-                 p_clean = "+91" + p_clean
-                 
-        return f"https://wa.me/{p_clean}?text={msg}"
+        # 1. Remove ANY non-digit characters (including + for a moment to normalize)
+        import re
+        p_digits = re.sub(r'\D', '', p)
+        
+        # 2. Check logic for India (+91)
+        # If it's a 10 digit number (e.g. 9998887777), treat as local IN number.
+        if len(p_digits) == 10:
+            final_phone = "+91" + p_digits
+        # If it's 12 digits and starts with 91 (e.g. 919998887777), it has country code but no +
+        elif len(p_digits) == 12 and p_digits.startswith("91"):
+            final_phone = "+" + p_digits
+        # If it's more than 10 digits, assume it might be valid with some other code? 
+        # But user insists on ensuring +91 is given.
+        else:
+            # Fallback: Just assume it needs + unless it already has it (which we stripped)
+            # Actually, let's just force + prefix if safe
+            final_phone = "+" + p_digits if len(p_digits) > 10 else "+91" + p_digits
+
+        return f"https://wa.me/{final_phone}?text={msg}"
 
     if not df.empty:
         df['notify_link'] = df.apply(make_wa_link, axis=1)
