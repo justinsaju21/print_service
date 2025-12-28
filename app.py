@@ -56,18 +56,18 @@ st.markdown("""
         border-top: 5px solid #1565c0;
         height: 100%;
         transition: transform 0.2s;
-    }
-    .price-card:hover {
-        transform: translateY(-5px);
+        color: #333333; /* Explicitly force dark text */
     }
     .price-card h3 {
         margin-top: 0;
         border-bottom: 1px solid #eee;
         padding-bottom: 10px;
+        color: #1565c0; /* Brand color for header */
     }
     .price-card ul {
         list-style-type: none;
         padding: 0;
+        color: #444; /* Dark gray for list items */
     }
     .price-card li {
         padding: 8px 0;
