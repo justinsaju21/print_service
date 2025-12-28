@@ -12,11 +12,6 @@ from reportlab.pdfgen import canvas
 import io
 import urllib.parse
 import sqlite3
-import datetime
-import extra_streamlit_components as stx
-
-import datetime
-import extra_streamlit_components as stx
 from streamlit_gsheets import GSheetsConnection
 
 # --- GOOGLE SHEETS DB SETUP ---
@@ -127,12 +122,23 @@ def get_orders_by_phone(phone):
     if df.empty: return df
     
     # String match phone
-    # Clean both sides to ensure matching (strip spaces)
-    # df['phone'] might be int or str
-    df['phone_str'] = df['phone'].astype(str).str.strip()
-    target_phone = str(phone).strip()
+    # Clean both sides to ensure matching (strip spaces, casting)
+    # df['phone'] might be int, float, or str in sheets.
+    # Convert to string, remove '.0' if float, strip spaces.
     
-    filtered = df[df['phone_str'] == target_phone].sort_values(by='id', ascending=False)
+    def normalize_phone(p):
+        s = str(p).strip()
+        if s.endswith('.0'): s = s[:-2]
+        return s
+
+    df['phone_clean'] = df['phone'].apply(normalize_phone)
+    target_phone = normalize_phone(phone)
+    
+    # Filter using normalized strings
+    filtered = df[df['phone_clean'] == target_phone].sort_values(by='id', ascending=False)
+    
+    # Clean up temp column before returning? Not strictly necessary but cleaner.
+    # Filtered view:
     return filtered
 
 def init_db():
