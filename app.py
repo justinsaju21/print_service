@@ -476,6 +476,8 @@ def home_view():
     st.write("")
     if st.button("Start Your Order ->", type="primary", use_container_width=True):
         navigate_to('order')
+    
+    # --- END HOME VIEW ---
 
 
 
