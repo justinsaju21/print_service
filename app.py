@@ -424,6 +424,25 @@ def home_view():
     st.title("Professional Print Services")
     st.markdown("### High Quality Printing at Unbeatable Prices")
     
+    # --- HOW IT WORKS SECTION ---
+    with st.container(border=True):
+        st.subheader("🚀 How It Works")
+        c1, c2, c3, c4 = st.columns(4)
+        with c1:
+            st.markdown("#### 1. Upload")
+            st.caption("Upload your PDF/Docs securely.")
+        with c2:
+            st.markdown("#### 2. Quote")
+            st.caption("Get instant price estimate.")
+        with c3:
+            st.markdown("#### 3. Order")
+            st.caption("Submit & Track online.")
+        with c4:
+            st.markdown("#### 4. Collect")
+            st.caption("Pay via QR & Pickup.")
+            
+    st.divider()
+    
     # Symmetrical 2-column layout
     col1, col2 = st.columns(2, gap="large")
     
@@ -448,6 +467,15 @@ def home_view():
         with st.container(border=True):
             calc_pages = st.number_input("Number of Pages", min_value=1, value=10)
             calc_color = st.selectbox("Color Mode", ["Black & White", "Full Color"])
+            calc_paper = st.selectbox("Paper Type", ["Standard", "Glossy"]) # Added missing selector for full calc
+            
+            p_price = "Glossy" if calc_paper == "Glossy" else "Standard" 
+            est = calculate_price(calc_pages, calc_color, p_price)
+            st.markdown(f"**Estimate: ₹{est:.2f}**")
+            
+    st.write("")
+    if st.button("Start Your Order ->", type="primary", use_container_width=True):
+        navigate_to('order')
             calc_paper = st.selectbox("Paper Selection", ["Standard", "Glossy"])
             
             p_type_logic = "Glossy" if calc_paper == "Glossy" else "Standard"
@@ -626,7 +654,9 @@ def admin_view():
     with st.sidebar:
         st.header("Login")
         pwd = st.text_input("Password", type="password")
-        if pwd == "admin123": 
+        # Secure Password Check
+        correct_password = st.secrets.get("admin_password", "Anonymous_77")
+        if pwd == correct_password: 
             st.session_state['admin_logged_in'] = True
         elif pwd:
             st.error("Invalid Password")
@@ -778,10 +808,37 @@ def track_orders_view():
 def main():
     # Sidebar Navigation
     with st.sidebar:
-        st.title("Navigation")
-        if st.button("🏠 Home"): navigate_to('home')
-        if st.button("📦 Track Orders"): navigate_to('track')
-        if st.button("🔒 Admin Panel"): navigate_to('admin')
+        st.image("https://cdn-icons-png.flaticon.com/512/3142/3142200.png", width=100) # Placeholder generic print icon
+        st.title("Print Service")
+        
+        # Mapping generic names to internal IDs
+        NAV_MAP = {
+            "🏠 Home": "home",
+            "📄 Order Now": "order",
+            "📦 Track Orders": "track",
+            "🔒 Admin Panel": "admin"
+        }
+        
+        # Reverse map for display
+        REV_NAV_MAP = {v: k for k, v in NAV_MAP.items()}
+        
+        # Current selection based on state
+        current_nav = REV_NAV_MAP.get(st.session_state.get('page', 'home'), "🏠 Home")
+        
+        selected_page = st.radio(
+            "Navigation", 
+            list(NAV_MAP.keys()), 
+            index=list(NAV_MAP.keys()).index(current_nav),
+            label_visibility="collapsed"
+        )
+        
+        # Update state if changed
+        if NAV_MAP[selected_page] != st.session_state['page']:
+            st.session_state['page'] = NAV_MAP[selected_page]
+            st.rerun()
+
+        st.divider()
+        st.info("📞 Help: +91 8606884320")
 
     if st.session_state['page'] == 'home':
         home_view()
