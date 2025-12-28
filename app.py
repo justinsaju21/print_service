@@ -15,6 +15,8 @@ import sqlite3
 import datetime
 import extra_streamlit_components as stx
 
+import datetime
+import extra_streamlit_components as stx
 from streamlit_gsheets import GSheetsConnection
 
 # --- GOOGLE SHEETS DB SETUP ---
@@ -22,7 +24,33 @@ from streamlit_gsheets import GSheetsConnection
 # Constants
 SPREADSHEET_URL = "https://docs.google.com/spreadsheets/d/1GA6TMom4CouSNFEesCEANqe3ZtP2MKk4d9PfsTXmPRQ/edit?gid=0#gid=0"
 
+def check_secrets():
+    # Helper to check if secrets are set up
+    if "gsheets" not in st.secrets.get("connections", {}):
+        st.error("🚨 Google Sheets Secrets Missing!")
+        st.markdown("""
+        ### How to Connect Your Database (Google Sheets)
+        To save orders, you need to connect this app to your Google Sheet securely.
+        
+        **Step 1: Get Credentials**
+        1. Go to [Google Cloud Console](https://console.cloud.google.com/).
+        2. Create a Project > Enable "Google Sheets API".
+        3. Create a Service Account > Create Key (JSON).
+        4. Download the JSON file.
+        
+        **Step 2: Share your Sheet**
+        1. Open [Your Sheet](https://docs.google.com/spreadsheets/d/1GA6TMom4CouSNFEesCEANqe3ZtP2MKk4d9PfsTXmPRQ/edit).
+        2. Click **Share**.
+        3. Copy the `client_email` from your JSON file (e.g., `service-account@project.iam.gserviceaccount.com`).
+        4. Paste it into Share dialog and give **Editor** access.
+        
+        **Step 3: Add to Streamlit Secrets**
+        Go to your App Dashboard > Settings > Secrets and paste the content of the JSON file under `[connections.gsheets]`.
+        """)
+        st.stop()
+        
 def get_db_connection():
+    check_secrets()
     return st.connection("gsheets", type=GSheetsConnection)
 
 def get_all_orders():
