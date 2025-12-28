@@ -1014,16 +1014,28 @@ def admin_view():
         st.info("No orders found in database.")
 
 def track_orders_view():
-    st.title("Track My Orders 📦")
-    st.markdown("View your order history and status.")
+    # Header with search-focused design
+    st.markdown("""
+    <div style='text-align: center; margin-bottom: 2rem;'>
+        <h1>Track My Orders 📦</h1>
+        <p style='color: #64748b; font-size: 1.1rem;'>Enter your phone number to view all your orders and their current status</p>
+    </div>
+    """, unsafe_allow_html=True)
     
     # 1. Try to get phone from Cookie
     cookie_phone = cookie_manager.get(cookie="user_phone")
     
-    # 2. Input Field (Prefilled if cookie exists)
-    phone_input = st.text_input("Enter your Phone Number to track", value=cookie_phone if cookie_phone else "")
+    # 2. Search Box with better styling
+    col_spacer1, col_search, col_spacer2 = st.columns([1, 2, 1])
+    with col_search:
+        phone_input = st.text_input(
+            "📱 Phone Number", 
+            value=cookie_phone if cookie_phone else "", 
+            placeholder="Enter 10-digit phone number",
+            label_visibility="collapsed"
+        )
     
-    if st.button("Track Orders") or phone_input:
+    if st.button("🔍 Track Orders", type="primary", use_container_width=False) or phone_input:
         if phone_input:
             # Save to cookie for future
             cookie_manager.set("user_phone", phone_input, expires_at=datetime.datetime.now() + datetime.timedelta(days=30))
@@ -1031,38 +1043,92 @@ def track_orders_view():
             orders = get_orders_by_phone(phone_input)
             
             if not orders.empty:
-                st.success(f"Found {len(orders)} orders for {phone_input}")
+                st.markdown(f"""
+                <div style='background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); padding: 1rem; border-radius: 0.75rem; border-left: 4px solid #10b981; margin-bottom: 1.5rem;'>
+                    <strong style='color: #065f46;'>✅ Found {len(orders)} order(s) for {phone_input}</strong>
+                </div>
+                """, unsafe_allow_html=True)
                 
                 for index, row in orders.iterrows():
+                    # Status color mapping
+                    status_colors = {
+                        'Pending': ('#f59e0b', '#fffbeb', 'Pending'),
+                        'Waiting for Payment': ('#3b82f6', '#eff6ff', 'Awaiting Payment'),
+                        'Printing': ('#8b5cf6', '#f5f3ff', 'In Progress'),
+                        'Ready for Pickup': ('#10b981', '#ecfdf5', 'Ready'),
+                        'Completed': ('#6b7280', '#f9fafb', 'Completed')
+                    }
+                    
+                    status = row['status']
+                    color, bg, label = status_colors.get(status, ('#6b7280', '#f9fafb', status))
+                    
+                    # Payment status colors
+                    pay_status = row.get('payment_status', 'Unpaid')
+                    pay_color = '#10b981' if pay_status == 'Paid' else '#ef4444'
+                    pay_bg = '#ecfdf5' if pay_status == 'Paid' else '#fef2f2'
+                    
                     with st.container(border=True):
-                        c1, c2, c3, c4 = st.columns([1, 2, 1, 1])
-                        with c1:
-                            st.write(f"**Order #{row['id']}**")
-                            st.caption(row['date'])
-                        with c2:
-                            st.write(f"**Details:** {row['details']}")
-                        with c3:
-                            status_color = "orange" if row['status'] == 'Pending' else "green" if row['status'] == 'Completed' else "blue"
-                            st.markdown(f"Status: <span style='color:{status_color}; font-weight:bold'>{row['status']}</span>", unsafe_allow_html=True)
-                            
-                            # Show Payment QR if Waiting for Payment
-                            if row['status'] == "Waiting for Payment" and row.get('payment_status', 'Unpaid') == 'Unpaid':
-                                with st.expander("💸 Pay Now (QR Code)", expanded=True):
+                        # Order header
+                        st.markdown(f"""
+                        <div style='display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid #e2e8f0;'>
+                            <div>
+                                <h3 style='margin: 0; color: #1e293b;'>Order #{row['id']}</h3>
+                                <p style='margin: 0.25rem 0 0 0; color: #64748b; font-size: 0.875rem;'>{row['date']}</p>
+                            </div>
+                            <div style='text-align: right;'>
+                                <div style='background: {bg}; color: {color}; padding: 0.5rem 1rem; border-radius: 9999px; font-weight: 600; font-size: 0.875rem; display: inline-block; margin-bottom: 0.5rem;'>
+                                    {label}
+                                </div>
+                                <div style='background: {pay_bg}; color: {pay_color}; padding: 0.25rem 0.75rem; border-radius: 9999px; font-weight: 600; font-size: 0.75rem; display: inline-block;'>
+                                    {pay_status}
+                                </div>
+                            </div>
+                        </div>
+                        """, unsafe_allow_html=True)
+                        
+                        # Order details
+                        col_details, col_amount = st.columns([3, 1])
+                        with col_details:
+                            st.markdown(f"**Details:** {row['details']}")
+                        with col_amount:
+                            st.markdown(f"""
+                            <div style='text-align: right;'>
+                                <div style='font-size: 0.875rem; color: #64748b;'>Amount</div>
+                                <div style='font-size: 1.5rem; font-weight: 700; color: #1e293b;'>₹{row['amount']:.2f}</div>
+                            </div>
+                            """, unsafe_allow_html=True)
+                        
+                        # Show Payment QR if Waiting for Payment
+                        if row['status'] == "Waiting for Payment" and row.get('payment_status', 'Unpaid') == 'Unpaid':
+                            with st.expander("💸 Pay Now (QR Code)", expanded=False):
+                                col_qr, col_inst = st.columns([1, 1])
+                                with col_qr:
                                     st.image("assets/qr_code.png", width=200)
-                                    st.write(f"**Amount: ₹{row['amount']:.2f}**")
-                                    st.info("After paying, please wait for 'Paid' status update.")
-
-                        with c4:
-                            pay_color = "green" if row.get('payment_status', 'Unpaid') == 'Paid' else "red"
-                            st.markdown(f"Pay: <span style='color:{pay_color}; font-weight:bold'>{row.get('payment_status', 'Unpaid')}</span>", unsafe_allow_html=True)
-                            st.write(f"**₹{row['amount']:.2f}**")
+                                with col_inst:
+                                    st.markdown(f"""
+                                    <div style='background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); padding: 1rem; border-radius: 0.5rem; border-left: 4px solid #3b82f6;'>
+                                        <h4 style='margin-top: 0; color: #1e40af;'>Payment Instructions</h4>
+                                        <p style='color: #1e40af; margin-bottom: 0.5rem;'><strong>Amount: ₹{row['amount']:.2f}</strong></p>
+                                        <ol style='color: #1e40af; margin: 0; padding-left: 1.25rem; font-size: 0.875rem;'>
+                                            <li>Scan the QR code</li>
+                                            <li>Complete payment</li>
+                                            <li>Wait for status update</li>
+                                        </ol>
+                                    </div>
+                                    """, unsafe_allow_html=True)
             else:
-                st.warning("No orders found for this number.")
+                st.markdown("""
+                <div style='background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); padding: 1.5rem; border-radius: 0.75rem; border-left: 4px solid #f59e0b; text-align: center;'>
+                    <strong style='color: #92400e;'>⚠️ No orders found for this number</strong>
+                    <p style='color: #92400e; margin-top: 0.5rem; margin-bottom: 0;'>Please check the phone number or place a new order.</p>
+                </div>
+                """, unsafe_allow_html=True)
                 
             # Contact Admin Option
             st.divider()
+            st.markdown("### Need Help?")
             help_msg = urllib.parse.quote(f"Hi, I need help with my orders for phone {phone_input}.")
-            st.link_button("💬 Contact Shop Owner on WhatsApp", f"https://wa.me/918606884320?text={help_msg}")
+            st.link_button("💬 Contact Shop Owner on WhatsApp", f"https://wa.me/918606884320?text={help_msg}", use_container_width=True)
             
         else:
             st.error("Please enter a phone number.")
