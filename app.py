@@ -244,9 +244,10 @@ def home_view():
     st.title("Professional Print Services")
     st.markdown("### High Quality Printing at Unbeatable Prices")
     
-    # Updated to 1:1 ratio for symmetry
+    # Symmetrical 2-column layout
     col1, col2 = st.columns(2, gap="large")
     
+    # Left Column: Pricing
     with col1:
         st.markdown("""
         <div class="price-card">
@@ -259,8 +260,8 @@ def home_view():
         </div>
         """, unsafe_allow_html=True)
         
-        st.write("") # Spacer
-        
+    # Right Column: Calculator (Moved here for balance)
+    with col2:
         st.subheader("Quick Cost Calculator")
         with st.container(border=True):
             calc_pages = st.number_input("Number of Pages", min_value=1, value=10)
@@ -272,18 +273,12 @@ def home_view():
             
             st.markdown(f"### Estimated: ₹{est_cost:.2f}")
 
-    with col2:
-        # Centering the QR code visually in the column
-        st.markdown("<div style='text-align: center;'>", unsafe_allow_html=True)
-        st.image("assets/qr_code.png", caption="Scan to Pay via GPay", width=300)
-        st.info("Note: Please wait for order confirmation on WhatsApp before making payment.")
-        st.markdown("</div>", unsafe_allow_html=True)
-
     st.divider()
     
-    # Centered 'cta' button
+    # Centered CTA
     _, center_col, _ = st.columns([1, 2, 1])
     with center_col:
+        st.info("Ready to print? Upload your files below.")
         if st.button("UPLOAD DOCUMENTS & ORDER NOW", use_container_width=True):
             navigate_to('order')
 
