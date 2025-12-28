@@ -1167,14 +1167,14 @@ def track_orders_view():
                         st.markdown(f"""
                         <div style='display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid #e2e8f0;'>
                             <div>
-                                <h3 style='margin: 0; color: #1e293b;'>Order #{row['id']}</h3>
-                                <p style='margin: 0.25rem 0 0 0; color: #64748b; font-size: 0.875rem;'>{row['date']}</p>
+                                <h3 style='margin: 0; color: #f8fafc;'>Order #{row['id']}</h3>
+                                <p style='margin: 0.25rem 0 0 0; color: #94a3b8; font-size: 0.875rem;'>{row['date']}</p>
                             </div>
                             <div style='text-align: right;'>
-                                <div style='background: {bg}; color: {color} !important; padding: 0.5rem 1rem; border-radius: 9999px; font-weight: 600; font-size: 0.875rem; display: inline-block; margin-bottom: 0.5rem;'>
+                                <div style='background: {bg}; color: {color} !important; padding: 0.35rem 0.75rem; border-radius: 9999px; font-weight: 600; font-size: 0.75rem; display: inline-block; margin-bottom: 0.5rem;'>
                                     {label}
                                 </div>
-                                <div style='background: {pay_bg}; color: {pay_color} !important; padding: 0.25rem 0.75rem; border-radius: 9999px; font-weight: 600; font-size: 0.75rem; display: inline-block;'>
+                                <div style='background: {pay_bg}; color: {pay_color} !important; padding: 0.35rem 0.75rem; border-radius: 9999px; font-weight: 600; font-size: 0.75rem; display: inline-block;'>
                                     {pay_status}
                                 </div>
                             </div>
@@ -1188,8 +1188,8 @@ def track_orders_view():
                         with col_amount:
                             st.markdown(f"""
                             <div style='text-align: right;'>
-                                <div style='font-size: 0.875rem; color: #64748b;'>Amount</div>
-                                <div style='font-size: 1.5rem; font-weight: 700; color: #1e293b;'>₹{row['amount']:.2f}</div>
+                                <div style='font-size: 0.875rem; color: #94a3b8;'>Amount</div>
+                                <div style='font-size: 1.5rem; font-weight: 700; color: #f8fafc;'>₹{row['amount']:.2f}</div>
                             </div>
                             """, unsafe_allow_html=True)
                         
@@ -1239,6 +1239,23 @@ def track_orders_view():
 
 # --- MAIN CONTROLLER ---
 
+def terms_view():
+    """Display Terms & Conditions for the Print Service."""
+    st.markdown("""<div class='light-box' style='padding:2rem; background:#f8fafc; border-radius:0.75rem;'>
+    <h2 style='color:#4f46e5; margin-bottom:1rem;'>Terms & Conditions</h2>
+    <p style='color:#1e293b; line-height:1.6;'>
+    <strong>1. Services</strong> – We provide printing services for documents, photos, and other media. All orders are subject to availability of materials and equipment.<br><br>
+    <strong>2. Payment</strong> – Full payment must be received before the order is processed. Payments are non‑refundable unless the order is cancelled by us due to inability to fulfill.<br><br>
+    <strong>3. Refunds & Cancellations</strong> – Cancellations requested after printing has started are not eligible for a refund. If we are unable to complete an order, a full refund will be issued.<br><br>
+    <strong>4. Liability</strong> – We are not liable for any loss of data, damage to original files, or any indirect damages arising from the use of our services.<br><br>
+    <strong>5. Privacy</strong> – Uploaded files are stored only for the purpose of printing and are deleted from our servers after order completion.<br><br>
+    <strong>6. Intellectual Property</strong> – You confirm that you hold the rights to all content you upload. We will not be responsible for any infringement claims.<br><br>
+    <strong>7. Governing Law</strong> – These terms are governed by the laws of India. Any disputes will be resolved in the courts of Mumbai.<br><br>
+    By placing an order you agree to these terms.
+    </p>
+    </div>""", unsafe_allow_html=True)
+
+
 def main():
     # Sidebar Navigation
     with st.sidebar:
@@ -1249,7 +1266,8 @@ def main():
         NAV_MAP = {
             "🏠 Home": "home",
             "📄 Order Now": "order",
-            "📦 Track Orders": "track"
+            "📦 Track Orders": "track",
+            "📜 Terms & Conditions": "terms"
         }
         
         # If we are in admin mode, show it in the nav so the radio button doesn't force-switch us back to home
@@ -1274,6 +1292,11 @@ def main():
         if selected_page in NAV_MAP and NAV_MAP[selected_page] != st.session_state['page']:
             st.session_state['page'] = NAV_MAP[selected_page]
             st.rerun()
+
+        # Route to Terms page
+        if st.session_state['page'] == 'terms':
+            terms_view()
+
 
         # Large spacer to force scrolling (Hidden Admin)
         for _ in range(100):
