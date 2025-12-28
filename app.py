@@ -1244,6 +1244,10 @@ def main():
             "📦 Track Orders": "track"
         }
         
+        # If we are in admin mode, show it in the nav so the radio button doesn't force-switch us back to home
+        if st.session_state.get('page') == 'admin':
+            NAV_MAP["🔒 Admin Panel"] = "admin"
+        
         # Reverse map for display
         REV_NAV_MAP = {v: k for k, v in NAV_MAP.items()}
         
