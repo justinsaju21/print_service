@@ -195,11 +195,11 @@ st.markdown("""
         --color-success: #10b981;
         --color-warning: #f59e0b;
         --color-error: #ef4444;
-        --color-bg-main: #f8fafc;
-        --color-bg-card: #ffffff;
-        --color-text-primary: #1e293b;
-        --color-text-secondary: #64748b;
-        --color-border: #e2e8f0;
+        --color-bg-main: #0f172a;
+        --color-bg-card: #1e293b;
+        --color-text-primary: #f8fafc;
+        --color-text-secondary: #94a3b8;
+        --color-border: #334155;
         --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
         --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
         --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
@@ -215,89 +215,28 @@ st.markdown("""
     
     /* ===== GLOBAL RESETS ===== */
     .main {
-        background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+        background: #0f172a;
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     }
     
     /* ===== TYPOGRAPHY ===== */
-    h1, h2, h3, h4, h5, h6 {
-        font-family: 'Poppins', 'Inter', sans-serif;
-        font-weight: 700;
-        color: var(--color-text-primary);
-        letter-spacing: -0.025em;
+    h1, h2, h3, h4, h5, h6, label, p, span, div {
+        font-family: 'Inter', sans-serif;
+    }
+
+    /* Force high contrast for labels and headers */
+    label p, .stMarkdown p, h1, h2, h3, h4 {
+        color: #f8fafc !important;
     }
     
     h1 {
+        font-family: 'Poppins', sans-serif;
         font-size: 2.5rem;
-        background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+        background: linear-gradient(135deg, var(--color-primary-light) 0%, var(--color-secondary) 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
         margin-bottom: 1rem;
-    }
-    
-    h2 {
-        font-size: 1.875rem;
-        color: var(--color-primary-dark);
-        margin-bottom: 0.75rem;
-    }
-    
-    h3 {
-        font-size: 1.5rem;
-        color: var(--color-primary);
-        margin-bottom: 0.5rem;
-    }
-    
-    p, .stMarkdown {
-        color: var(--color-text-secondary);
-        line-height: 1.6;
-    }
-    
-    /* ===== BUTTONS ===== */
-    .stButton > button {
-        background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
-        color: white;
-        border: none;
-        border-radius: var(--radius-lg);
-        padding: 0.75rem 2rem;
-        font-weight: 600;
-        font-size: 1rem;
-        box-shadow: var(--shadow-md);
-        transition: all var(--transition-base);
-        font-family: 'Inter', sans-serif;
-        letter-spacing: 0.025em;
-        position: relative;
-        overflow: hidden;
-    }
-    
-    .stButton > button:hover {
-        background: linear-gradient(135deg, var(--color-primary-dark) 0%, var(--color-primary) 100%);
-        box-shadow: var(--shadow-lg);
-        transform: translateY(-2px);
-    }
-    
-    .stButton > button:active {
-        transform: translateY(0);
-        box-shadow: var(--shadow-sm);
-    }
-    
-    /* Button Ripple Effect */
-    .stButton > button::before {
-        content: '';
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        width: 0;
-        height: 0;
-        border-radius: 50%;
-        background: rgba(255, 255, 255, 0.3);
-        transform: translate(-50%, -50%);
-        transition: width 0.6s, height 0.6s;
-    }
-    
-    .stButton > button:active::before {
-        width: 300px;
-        height: 300px;
     }
     
     /* ===== INPUTS ===== */
@@ -310,30 +249,38 @@ st.markdown("""
         padding: 0.75rem 1rem;
         font-family: 'Inter', sans-serif;
         transition: all var(--transition-fast);
-        background: var(--color-bg-card);
+        background: #ffffff !important;
+        color: #1e293b !important;
+        font-weight: 500;
+    }
+
+    /* Fix Placeholder Contrast on White Background */
+    ::placeholder {
+        color: #64748b !important;
+        opacity: 1 !important;
     }
     
     .stTextInput > div > div > input:focus,
     .stNumberInput > div > div > input:focus,
     .stSelectbox > div > div > select:focus,
     .stTextArea > div > div > textarea:focus {
-        border-color: var(--color-primary);
-        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        border-color: var(--color-primary-light);
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
         outline: none;
+    }
+
+    div[data-baseweb="select"] > div {
+        background-color: white !important;
+        color: #1e293b !important;
     }
     
     /* ===== CONTAINERS & CARDS ===== */
-    .element-container {
-        margin-bottom: 1rem;
-    }
-    
     [data-testid="stContainer"] {
-        background: var(--color-bg-card);
+        background: #1e293b;
         border-radius: var(--radius-xl);
         padding: 1.5rem;
         box-shadow: var(--shadow-md);
-        border: 1px solid var(--color-border);
-        transition: all var(--transition-base);
+        border: 1px solid #334155;
     }
     
     [data-testid="stContainer"]:hover {
