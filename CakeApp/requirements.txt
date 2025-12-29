@@ -1,7 +1,0 @@
-streamlit
-PyPDF2
-reportlab
-pandas
-reportlab
-extra-streamlit-components
-st-gsheets-connection
