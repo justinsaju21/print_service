@@ -1201,24 +1201,23 @@ def track_orders_view():
                                     st.image("assets/qr_code.png", width=200)
                                 with col_inst:
                                     st.markdown(f"""
-                                    <div style='background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); padding: 1rem; border-radius: 0.5rem; border-left: 4px solid #3b82f6;'>
-                                        <h4 style='margin-top: 0; color: #1e40af;'>Payment Instructions</h4>
-                                        <p style='color: #1e40af; margin-bottom: 0.5rem;'><strong>Amount: ₹{row['amount']:.2f}</strong></p>
-                                        <ol style='color: #1e40af; margin: 0; padding-left: 1.25rem; font-size: 0.875rem;'>
-                                            <li>Scan the QR code OR Click below</li>
-                                            <li>Complete payment</li>
-                                            <li>Wait for status update</li>
-                                        </ol>
-                                        
-                                        <div style="margin-top: 1rem;">
-                                            <a href="upi://pay?pa=justinsaju21@oksbi&pn=PrintService&am={row['amount']:.2f}&cu=INR" target="_blank" style="text-decoration: none;">
-                                                <button style="background: #2563eb; color: white; border: none; padding: 0.5rem 1rem; border-radius: 0.5rem; font-weight: 600; width: 100%; cursor: pointer;">
-                                                    🚀 Pay via UPI App
-                                                </button>
-                                            </a>
-                                        </div>
-                                    </div>
-                                    """, unsafe_allow_html=True)
+<div style='background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); padding: 1rem; border-radius: 0.5rem; border-left: 4px solid #3b82f6;'>
+    <h4 style='margin-top: 0; color: #1e40af;'>Payment Instructions</h4>
+    <p style='color: #1e40af; margin-bottom: 0.5rem;'><strong>Amount: ₹{row['amount']:.2f}</strong></p>
+    <ol style='color: #1e40af; margin: 0; padding-left: 1.25rem; font-size: 0.875rem;'>
+        <li>Scan the QR code OR Click below</li>
+        <li>Complete payment</li>
+        <li>Wait for status update</li>
+    </ol>
+    <div style="margin-top: 1rem;">
+        <a href="upi://pay?pa=justinsaju21@oksbi&pn=PrintService&am={row['amount']:.2f}&cu=INR" target="_blank" style="text-decoration: none;">
+            <button style="background: #2563eb; color: white; border: none; padding: 0.5rem 1rem; border-radius: 0.5rem; font-weight: 600; width: 100%; cursor: pointer;">
+                🚀 Pay via UPI App
+            </button>
+        </a>
+    </div>
+</div>
+""", unsafe_allow_html=True)
             else:
                 st.markdown("""
                 <div style='background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); padding: 1.5rem; border-radius: 0.75rem; border-left: 4px solid #f59e0b; text-align: center;'>
